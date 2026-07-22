@@ -47,31 +47,35 @@ _PADRAO_DECIMAL_UM_SEPARADOR = re.compile(r"^([0-9]+)([.,])([0-9]+)$")
 _PADRAO_DECIMAL_AGRUPADO = re.compile(r"^[0-9]{1,3}(?:\.[0-9]{3})+,[0-9]{2}$")
 
 
-def _interpretar_valor_monetario(corpo: str) -> tuple[str | None, str | None]:
+def _interpretar_valor_monetario(corpo: str) -> str | None:
     """Interpreta o texto de um valor monetario (sem o sinal `-`).
 
-    Devolve (texto_decimal, None) quando reconhecido; (None, motivo) quando
-    o separador e ambiguo entre milhar e decimal (nao e adivinhado); ou
-    (None, None) quando o formato simplesmente nao e reconhecido."""
+    Devolve o texto decimal equivalente quando reconhecido, ou None
+    quando o formato nao e reconhecido.
+
+    Decisao registrada: um separador unico seguido de exatamente 3 digitos
+    (ex.: "1.500", "1,500") e resolvido como separador de milhar, nunca
+    como decimal — nao e uma adivinhacao entre duas leituras igualmente
+    validas, porque a leitura decimal teria 3 casas decimais, e nenhum
+    valor monetario deste sistema aceita mais de 2 (LIMITE_CASAS_DECIMAIS,
+    ver _decimal_fora_da_faixa); a leitura de milhar e a unica que pode
+    resultar num valor valido."""
 
     if _PADRAO_DECIMAL_INTEIRO.match(corpo):
-        return corpo, None
+        return corpo
 
     if _PADRAO_DECIMAL_AGRUPADO.match(corpo):
         parte_inteira, parte_decimal = corpo.rsplit(",", 1)
-        return parte_inteira.replace(".", "") + "." + parte_decimal, None
+        return parte_inteira.replace(".", "") + "." + parte_decimal
 
     um_separador = _PADRAO_DECIMAL_UM_SEPARADOR.match(corpo)
     if um_separador:
         inteiro, _separador, decimais = um_separador.groups()
         if len(decimais) == 3:
-            return None, (
-                "Separador ambíguo entre milhar e decimal (não "
-                f"adivinhado): {corpo!r}."
-            )
-        return f"{inteiro}.{decimais}", None
+            return f"{inteiro}{decimais}"
+        return f"{inteiro}.{decimais}"
 
-    return None, None
+    return None
 
 
 # Campos cuja celula e sempre obrigatoria na Base, independente de condicoes
@@ -408,15 +412,14 @@ def normalizar_decimal(nome: str, valor: object) -> CampoNormalizado:
     if corpo.startswith("-"):
         sinal, corpo = "-", corpo[1:]
 
-    texto_decimal, motivo_ambiguo = _interpretar_valor_monetario(corpo)
+    texto_decimal = _interpretar_valor_monetario(corpo)
     if texto_decimal is None:
         return CampoNormalizado(
             nome,
             valor,
             None,
             StatusCampo.INVALIDO,
-            motivo=motivo_ambiguo
-            or f"Formato monetario nao reconhecido: {texto}",
+            motivo=f"Formato monetario nao reconhecido: {texto}",
         )
     try:
         decimal_valor = Decimal(sinal + texto_decimal)

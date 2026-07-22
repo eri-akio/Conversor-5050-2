@@ -58,6 +58,26 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -v
 ```
 
+## Gerando o executável (Windows)
+
+```powershell
+python -m pip install pyinstaller
+python -m PyInstaller SmartReporting.spec --clean --noconfirm
+```
+
+Gera `dist/SmartReporting.exe` — um único arquivo, sem console, com o
+XSD já embutido (`assets/schemas/`). Não precisa de Python instalado na
+máquina que for rodar o `.exe`. Para reconstruir a receita do zero (ex.:
+depois de adicionar um novo módulo `hiddenimports`), o comando original
+usado foi:
+
+```powershell
+python -m PyInstaller --name "SmartReporting" --onefile --windowed --add-data "assets/schemas;assets/schemas" --hidden-import "src" --clean --noconfirm main.py
+```
+
+Isso sobrescreve `SmartReporting.spec`. `build/` e `dist/` não são
+versionados (`.gitignore`); o `.spec` é.
+
 ## Progresso da reconstrução
 
 Ver o roadmap completo (10 fases) em

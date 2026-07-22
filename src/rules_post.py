@@ -178,7 +178,10 @@ def validar_contingencia_individual_sem_probabilidade(
 def validar_primeira_contabilizacao_sem_categoria(
     evento: EventoAgrupado,
 ) -> Ocorrencia | None:
-    """DRO000009."""
+    """DRO000009: usa min(dataContabilizacao), nao dataOcorrencia -- por
+    isso pode disparar mesmo quando DRO001212 (que usa dataOcorrencia,
+    rules_pre.py) nao acusa nada para o mesmo evento: um evento pode ter
+    ocorrido antes de 2021 mas sido contabilizado (lancado) so depois."""
 
     datas = [
         c.data_contabilizacao
@@ -195,7 +198,11 @@ def validar_primeira_contabilizacao_sem_categoria(
                 "Primeira contabilização a partir de 2021 exige "
                 "categoriaNivel2."
             ),
-            f"Primeira contabilização em {min(datas)}, categoriaNivel2 ausente.",
+            (
+                f"Primeira contabilização em {min(datas)} (dataOcorrencia "
+                f"do evento: {evento.valor_evento('dataOcorrencia')}), "
+                "categoriaNivel2 ausente."
+            ),
             ("categoriaNivel2",),
         )
     return None

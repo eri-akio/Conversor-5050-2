@@ -5,6 +5,7 @@ Ver docs/plano_conversor_dro_5050_simples.md secao 20.
 
 from __future__ import annotations
 
+import sys
 from decimal import Decimal
 from pathlib import Path
 
@@ -12,7 +13,16 @@ from lxml import etree
 
 from src.models import Contabilizacao, EventoAgrupado, EventoConsolidado
 
-RESOURCES_DIR = Path(__file__).resolve().parent.parent / "assets" / "schemas"
+# Quando empacotado com PyInstaller (--onefile), os arquivos de dados sao
+# extraidos para uma pasta temporaria exposta em sys._MEIPASS; __file__ nao
+# aponta mais para a arvore de codigo-fonte original. Em execucao normal
+# (nao empacotada), sys.frozen nao existe e cai no calculo relativo usual.
+if getattr(sys, "frozen", False):
+    _BASE_DIR = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+else:
+    _BASE_DIR = Path(__file__).resolve().parent.parent
+
+RESOURCES_DIR = _BASE_DIR / "assets" / "schemas"
 XSD_PATH = RESOURCES_DIR / "dro_5050_2025_06.xsd"
 
 

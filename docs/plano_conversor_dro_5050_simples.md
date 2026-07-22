@@ -329,27 +329,40 @@ Além de número puro (ex.: `2300`), estes formatos de texto são aceitos:
 "-1.427,98"      → -1427.98    (número negativo)
 ```
 
-O separador de milhar só é reconhecido quando aparece em grupos de
-exatamente 3 dígitos terminados por `,` seguida de exatamente 2 dígitos
-(o padrão brasileiro completo). **Valores com um único separador seguido
-de exatamente 3 dígitos são ambíguos** — poderiam ser milhar (`1.427` =
-1427) ou decimal (`1.427` = um vírgula quatrocentos e vinte e sete) — e
-ficam `INVALIDO` em vez de adivinhados; o mesmo vale com `,` no lugar de
-`.`. Valores como `"R$ 1.427,98"` (com prefixo de moeda) continuam não
-reconhecidos.
+O separador de milhar é reconhecido tanto em grupos de exatamente 3
+dígitos terminados por `,` seguida de exatamente 2 dígitos (o padrão
+brasileiro completo, `"1.552.165,46"`) quanto isolado, sem parte decimal
+(`"1.427"`, `"1,427"`).
+
+**Decisão registrada (revista):** um separador único seguido de
+exatamente 3 dígitos (`"1.427"`, `"1,427"`) é resolvido como separador de
+milhar — `"1.427"` → `1427`, não `1427,00` interpretado como decimal de
+3 casas. Isso **não é uma adivinhação entre duas leituras igualmente
+válidas**: a leitura decimal teria 3 casas decimais, e nenhum valor
+monetário deste sistema aceita mais de 2 (regra abaixo) — então milhar é
+a única leitura que pode resultar num valor válido, o que a torna a
+resolução correta, não um palpite. Essa mesma regra vale para qualquer
+texto com essa forma, incluindo quando aparece como parte de um número
+maior (ex.: `"1427.900"` → `1427900`, não `1427,90` — o separador único
+com 3 dígitos depois é resolvido como milhar antes mesmo de qualquer
+análise de casas decimais). Valores como `"R$ 1.427,98"` (com prefixo de
+moeda) continuam não reconhecidos.
 
 **Nenhum valor monetário pode ter mais de duas casas decimais reais**,
 seja texto ou número nativo do Excel. Isso vale tanto para o separador
-único (`"1427,9876"`, 4 casas → inválido) quanto para células numéricas
-puras do Excel (`1200.005` → inválido) — esse segundo caminho não passa
-pelo texto, então a regra de ambiguidade sozinha não bastava para pegá-lo.
-Zeros à direita não contam como casas reais (`1427.900` equivale a
-`1427.90`); o teste é por valor, não por quantos dígitos foram digitados.
-Essa regra existe para impedir que um valor sem escala válida entre no
-cálculo dos totais e só apareça uma inconsistência depois, na hora de
-formatar o XML com exatamente duas casas — rejeitar na normalização evita
-que os totais sejam calculados a partir de um valor que seria arredondado
-de forma diferente mais tarde.
+único com mais/menos de 3 dígitos (`"1427,9876"`, 4 casas → inválido)
+quanto para células numéricas puras do Excel (`1200.005` → inválido) —
+esse segundo caminho não passa pelo texto, então a regra de milhar
+sozinha não pega esse caso. Zeros à direita não contam como casas reais
+quando o valor já chega como `Decimal` numérico (`Decimal("1427.900")`
+equivale a `1427.90`) — mas essa equivalência só vale para um `Decimal`
+já construído fora do parser de texto; como texto de planilha,
+`"1427.900"` cai na regra de milhar acima (vira `1427900`) antes de
+qualquer contagem de casas decimais. Essa regra existe para impedir que
+um valor sem escala válida entre no cálculo dos totais e só apareça uma
+inconsistência depois, na hora de formatar o XML com exatamente duas
+casas — rejeitar na normalização evita que os totais sejam calculados a
+partir de um valor que seria arredondado de forma diferente mais tarde.
 
 **Também fica `INVALIDO` um valor com mais de 16 dígitos na parte
 inteira**, o limite do próprio XSD (`tipoDecimal`:
@@ -461,6 +474,16 @@ menor dataContabilizacao > 2021-01-01
 + categoriaNivel2 vazia
 → DRO000009
 ```
+
+**Nota — `DRO000009` e `DRO001212` usam datas-gatilho diferentes, por
+desenho oficial (auditoria confirmada contra as duas planilhas de
+críticas):** `DRO001212` olha `dataOcorrencia`; `DRO000009` olha
+`min(dataContabilizacao)` do evento — nunca `dataOcorrencia`. Um evento
+pode ter ocorrido antes de 2021 (isentando-o de `DRO001212`) e ainda
+assim ter sido contabilizado/lançado só depois de 2021, disparando
+`DRO000009` mesmo assim. Isso não é uma inconsistência do conversor: são
+duas críticas oficiais independentes, cada uma sobre um campo de data
+diferente, e podem discordar sobre o mesmo evento.
 
 ### Domínios principais
 

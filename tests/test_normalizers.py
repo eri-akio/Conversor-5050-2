@@ -178,13 +178,26 @@ def test_normalizar_decimal_formato_nao_suportado_e_invalido(
     assert campo.status is StatusCampo.INVALIDO
 
 
-@pytest.mark.parametrize("valor", ["1.427", "1,427", "-1.427"])
-def test_normalizar_decimal_separador_ambiguo_e_invalido(
-    valor: str,
+@pytest.mark.parametrize(
+    ("valor", "esperado"),
+    [
+        ("1.427", Decimal("1427")),
+        ("1,427", Decimal("1427")),
+        ("-1.427", Decimal("-1427")),
+    ],
+)
+def test_normalizar_decimal_separador_unico_com_tres_digitos_e_milhar(
+    valor: str, esperado: Decimal
 ) -> None:
+    """Decisão registrada: um separador único seguido de exatamente 3
+    dígitos é resolvido como separador de milhar (não como decimal) —
+    a leitura decimal teria 3 casas, que nenhum valor monetário deste
+    sistema aceita (máximo 2), então milhar é a única leitura possível,
+    não uma adivinhação entre duas igualmente válidas."""
+
     campo = normalizar_decimal("valorPerdaEfetiva", valor)
-    assert campo.status is StatusCampo.INVALIDO
-    assert "ambígu" in campo.motivo.lower()
+    assert campo.status is StatusCampo.VALIDO
+    assert campo.valor == esperado
 
 
 def test_normalizar_decimal_ausente() -> None:
@@ -285,17 +298,24 @@ def test_normalizar_decimal_com_dezesseis_digitos_inteiros_e_valido() -> None:
     assert campo.status is StatusCampo.VALIDO
 
 
-def test_normalizar_decimal_texto_com_1427_900_e_ambiguo_nao_valido() -> None:
-    """Distincao importante: '1427.900' como TEXTO (separador unico + 3
-    digitos apos) cai na regra de ambiguidade ja existente
-    (_interpretar_valor_monetario), continua INVALIDO por esse motivo —
-    nao chega a ser avaliado por _decimal_fora_da_faixa. Ver o teste
-    acima, que testa _decimal_fora_da_faixa isoladamente com um Decimal
-    ja construido (onde 1427.900 == 1427.90 e VALIDO)."""
+def test_normalizar_decimal_texto_com_1427_900_e_milhar_nao_decimal() -> (
+    None
+):
+    """Distinção importante: '1427.900' como TEXTO (separador único + 3
+    dígitos depois) passa pela regra de resolução de milhar em
+    _interpretar_valor_monetario ANTES de qualquer análise de casas
+    decimais — vira 1427900 (um milhão e tanto), não 1427.90. Isso é
+    diferente de testar _decimal_fora_da_faixa isoladamente com um
+    Decimal já construído como 1427.900 (que ali equivale a 1427.90,
+    zeros à direita não contam) — o teste acima cobre esse outro caminho.
+    Os dois caminhos calculam coisas diferentes por design: um interpreta
+    texto de planilha (onde "1427.900" é claramente milhar, não decimal
+    com 3 casas — este sistema nunca aceita mais de 2), o outro só
+    verifica a faixa de um valor já numérico."""
 
     campo = normalizar_decimal("valorPerdaEfetiva", "1427.900")
-    assert campo.status is StatusCampo.INVALIDO
-    assert "ambígu" in campo.motivo.lower()
+    assert campo.status is StatusCampo.VALIDO
+    assert campo.valor == Decimal("1427900")
 
 
 def test_detectar_ausencia_gera_base_obr_001() -> None:

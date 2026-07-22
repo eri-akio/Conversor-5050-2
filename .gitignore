@@ -37,3 +37,8 @@ reports/*
 
 # Dados locais e documentos sensíveis
 *.log
+
+# Empacotamento (PyInstaller) — build/ e dist/ sao gerados a cada build;
+# SmartReporting.spec fica versionado (receita reproduzivel do build).
+build/
+dist/

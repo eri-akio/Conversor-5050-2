@@ -1,13 +1,3 @@
-"""Ponto de entrada do Conversor DRO 5050 (versao simples).
-
-Sem argumentos, abre a interface desktop. Quando um caminho de planilha
-Excel e informado, roda em modo terminal.
-
-Ver docs/plano_conversor_dro_5050_simples.md para o contrato funcional
-completo e docs/plano_conversor_dro_5050_simples.md secao 25 para o roadmap
-de implementacao (ainda em andamento - Fase 1 concluida).
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -17,7 +7,7 @@ from pathlib import Path
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Conversor DRO 5050 - versao simples",
+        description="Conversor DRO 5050",
     )
     parser.add_argument(
         "planilha",

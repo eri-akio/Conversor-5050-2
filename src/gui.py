@@ -38,7 +38,7 @@ ALTURA_JANELA = 430
 def pasta_saida_padrao() -> Path:
     """Pasta de saída sugerida ao abrir a interface."""
 
-    return Path.home() / "Downloads" / "conversor 5050"
+    return Path.home() / "Downloads" / "Conversor_DRO_5050"
 
 
 class Aplicacao(ttk.Frame):

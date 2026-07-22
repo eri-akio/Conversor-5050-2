@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from src.calculations import montar_evento, normalizar_linha_base
 from src.reader import BASE_COLUNAS
+from src.rules_pre import validar_categoria_nivel2_obrigatoria
 from src.rules_post import (
     consolidar_eventos,
     validar_categorias_compativeis,
@@ -118,10 +119,38 @@ def test_primeira_contabilizacao_sem_categoria_gera_dro000009() -> None:
     ]
     evento = _evento("EVT-1", linhas)
 
-    assert (
-        validar_primeira_contabilizacao_sem_categoria(evento).codigo
-        == "DRO000009"
-    )
+    ocorrencia = validar_primeira_contabilizacao_sem_categoria(evento)
+
+    assert ocorrencia.codigo == "DRO000009"
+    assert "dataOcorrencia" in ocorrencia.detalhe
+
+
+def test_dro000009_dispara_mesmo_com_dataocorrencia_antes_de_2021() -> None:
+    """Auditoria DRO001212 vs DRO000009: um evento pode ter ocorrido
+    antes de 2021 (isentando-o da DRO001212, que usa dataOcorrencia) mas
+    ter sido contabilizado so depois de 2021 -- nesse caso a DRO000009
+    (que usa min(dataContabilizacao)) dispara mesmo assim. Nao e
+    conflito: sao duas criticas oficiais distintas, cada uma com sua
+    propria data-gatilho."""
+
+    linhas = [
+        _linha(
+            2,
+            dataOcorrencia="2020-01-06",
+            categoriaNivel2=None,
+            dataContabilizacao="2025-11-01",
+            valorPerdaEfetiva=0,
+            valorProvisao=0,
+            valorRecuperacao=0,
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert validar_categoria_nivel2_obrigatoria(evento) is None
+
+    ocorrencia = validar_primeira_contabilizacao_sem_categoria(evento)
+    assert ocorrencia.codigo == "DRO000009"
+    assert "2020-01-06" in ocorrencia.detalhe
 
 
 def test_primeira_contabilizacao_exatamente_em_2021_01_01_nao_gera_dro000009() -> (

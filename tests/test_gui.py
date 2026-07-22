@@ -32,7 +32,7 @@ def test_aplicacao_constroi_com_status_inicial_aguardando(raiz_tk) -> None:
 
 
 def test_pasta_saida_padrao_e_downloads_conversor_5050() -> None:
-    assert pasta_saida_padrao() == Path.home() / "Downloads" / "conversor 5050"
+    assert pasta_saida_padrao() == Path.home() / "Downloads" / "Conversor_DRO_5050"
 
 
 def test_aplicacao_ja_preenche_pasta_de_saida_padrao(raiz_tk) -> None:
