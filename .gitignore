@@ -10,6 +10,7 @@ __pycache__/
 
 # Ferramentas de teste e qualidade
 .pytest_cache/
+.pytest_tmp/
 .mypy_cache/
 .ruff_cache/
 .coverage

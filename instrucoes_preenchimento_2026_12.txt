@@ -1,0 +1,1376 @@
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  INSTRUÇÕES DE PREENCHIMENTO DO DEMONSTRATIVO  DE 
+RISCO OPERACIONAL  
+ 
+1. Histórico de Atualizações  ................................ ................................ ................................ .....................  3 
+2. Introdução  ................................ ................................ ................................ ................................ ...........  5 
+2.1. Informações Gerais  ................................ ................................ ................................ .............  5 
+2.2. Abrangência Temporal do Documento ................................ ................................ ...............  5 
+3. Visão Conceitual do Documento  ................................ ................................ ................................ .........  7 
+4. Critérios de Agregação das Perdas  ................................ ................................ ................................ ...... 9 
+5. Cisões, Fusões, Aquisições e Incorporações  ................................ ................................ ........................  9 
+6. Descarte de Dados  ................................ ................................ ................................ ...............................  9 
+7. Risco Legal - Contingências Passivas  ................................ ................................ ................................ .. 10 
+7.1. Considerações Gerais (NR)  ................................ ................................ ...............................  10 
+7.2. Procedimentos para registro de eventos de Risco Legal e contingências passivas  ..........  10 
+7.3. Situações especiais  ................................ ................................ ................................ ...........  11 
+8. Descrição dos Campos do Documento 5050  ................................ ................................ .....................  12 
+8.1. Cabeçalho  ................................ ................................ ................................ .........................  12 
+8.1.1.  Conceituação  ................................ ................................ ................................ ....................  12 
+8.1.2.  Campos Informados no Cabeçalho  ................................ ................................ ..................  12 
+8.2. Bloco 1 - Eventos Individualizados  ................................ ................................ ....................  13 
+8.2.1.  Conceituação  ................................ ................................ ................................ ....................  13 
+8.2.2.  Campos dos Eventos Individualizados  ................................ ................................ ..............  13 
+8.3. Bloco 2 - Eventos Consolidados  ................................ ................................ ........................  22 
+8.3.1.  Conceituação  ................................ ................................ ................................ ....................  22 
+8.3.2.  Campos dos Eventos Consolidados  ................................ ................................ ..................  23 
+8.4. Bloco 3 - Tabela de Sistemas de Origem  ................................ ................................ ...........  24 
+8.4.1.  Conceituação  ................................ ................................ ................................ ....................  25 
+8.4.2.  Campos da Tabela de Sistemas de Origem  ................................ ................................ ...... 25 
+8.5. Bloco 4 - Tabela de Subtítulos de Nível Interno  ................................ ...............................  26 
+8.5.1.  Conceituação  ................................ ................................ ................................ ....................  26 
+8.5.2.  Campos da Tabela de Subtítulos de Nível Interno  ................................ ...........................  26 
+8.6. Bloco 5 – Eventos que deixaram de ser informados no bloco “Eventos Individualizados” 
+(NR)  27 
+8.6.1.  Conceituação  ................................ ................................ ................................ ....................  27 
+8.6.2.  Campos dos Eventos Excluídos  ................................ ................................ ........................  27 
+9. Leiaute XML do Documento 5050: (NR)  ................................ ................................ ............................  28 
+10. Anexos  ................................ ................................ ................................ ................................ ...............  29 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  10.1.  Anexo I - Categorias Nível 1 de Basileia II  ................................ ................................ .........  29 
+10.2.  Anexo II - Categorias Nível 2 de Basileia II  ................................ ................................ ........  29 
+10.3.  Anexo III - Unidades de Negócio  ................................ ................................ .......................  30 
+10.4.  Anexo IV – Motivos de exclusão de Evento Individualizado (NR) ................................ ..... 30 
+10.5.  Anexo V – Contabilizações (NR)  ................................ ................................ ........................  31 
+ 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  1. HISTÓRICO DE ATUALIZAÇÕES  
+A tabela abaixo tem a finalidade de manter um registro histórico de todas as atualizações efetuadas nestas 
+Instruções de Preenchimento após sua publicação inicial.  
+Sempre que ocorrerem modificações no conteúdo desse documento, independentemente do motivo 
+(alterações normativas, melhorias de redação, inclusão de exemplos elucidativos, correção de erros, etc.), 
+será incluída uma referência nessa tabela e as partes afet adas no documento estarão marcadas com a 
+indicação NR (nova redação).  
+ 
+Tabela de Histórico das Atualizações  
+Data  Descrição  Detalhamento  
+03/11/2020  Primeira publicação  Publicação original das instruções do documento 5050  
+19/11/2020  Correção de 
+instrução e alteração 
+de definição de 
+campo  1)  Item 8.5.2, letra ( a): correção da instrução relativa ao 
+campo “codigoConta”  indicando que deve ter até 24 
+caracteres numéricos, para compatibilizar com os campos 
+“contaBalAnaliticoDebito ” e “ contaBalAnaliticoCredito ” 
+descritos no item 8.2.2, letra (w).  
+  
+2)  Capítulo 9: adequação do leiaute XML para indicar que o 
+atributo “ codigoConta ” da tag “ conta ” do elemento 
+“contasSubtitulosInternos ” deve ter até 24 caracteres, 
+decorrente da correção descrita no detalhamento anterior.  
+02/12/2020  Inclusão campo 
+valorRecuperacao e 
+ajustes textuais  1) Inclusão do campo w.8) Recuperação Contabilizada ( campo: 
+valorRecuperacao), referente ao Detalhamento do registro 
+das contabilizações relacionadas  ao Evento  
+2) Leiaute XML do Documento 5050 : adequação para 
+contemplar o novo campo “valorRecuperacao”  
+3) Esclarecimentos sobre Identificação de Evento Ligado a Risco 
+Cibernético ( campo: ligadoRiscoCibernetico)  
+07/05/2021  Ajustes textuais e 
+alteração de 
+posicionamento de 
+campo  1) Capítulo 8:  O campo “fonteRecuperacao” (antigo item “k”) 
+foi remanejado para o detalhamento das contabilizações 
+relacionadas ao idEvento. Como primeira consequência, a 
+partir do item “k”, os itens foram renumerados, porém sem 
+alterações relevantes de conteúdo. A segu nda consequência 
+foi a alocação do campo ”fonteRecuperacao” no sub -item 
+“v.9”.  
+2) Item 8.1.2, letra (g):  efetuado ajuste na redação para 
+compatibilizar à terminologia adotada pela Circular nº 
+3.979/20.  
+3) Item 8.2.2, letra (o):  esclarecimento adicional sobre a 
+condição que implica obrigatoriedade de preenchimento do 
+campo.  
+4) Item 8.2.2, letra (q):  adicionada a informação sobre a 
+obrigatoriedade da informação após a entrada em vigor da 
+Circular nº 3.979/20.  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  5) Item 8.2.2, letra (t):  esclarecimento adicional sobre o uso de 
+código de instalação (ID Instal) no caso de dependências no 
+exterior.  
+6) Item 8.3.1:  ajuste de redação para tornar mais claro o escopo 
+dos eventos a serem reportados no bloco.  
+7) Item 8.4.2:  ratificada a necessidade de unicidade dos códigos 
+informados.  
+8) Item 8.5.2:  ratificada a necessidade de unicidade dos códigos 
+informados.  
+9) Leiaute XML do Documento 5050 : adequação para 
+contemplar o deslocamento do campo “fonteRecuperacao”, 
+assim como a inclusão da alternativa de preenchimento 
+“NA”.  
+30/12/202 5 Alterações no 
+escopo e 
+contabilização de 
+contingências 
+passivas e inclusão 
+do bloco de saídas  1) Contingências passivas:  
+a. O novo escopo são todas as contingências passivas e não 
+apenas as contingências judiciais.  
+b. Inclusão de novos tipos de avaliação de contingências 
+passivas  
+c. Inclusão de novo tipo de natureza de contingência  
+d. Alteração do domínio dos campos de contas COSIF no 
+bloco de contabilizações.  
+e. Inclusão de novos campos no bloco consolidado,  
+2) Inclusão do bloco de Saídas de Eventos.  
+3) Ajustes de redação e outras mudanças menores . 
+4) Inclusão do campo de identificação de agregação de 
+eventos.  
+ 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  2. INTRODUÇÃO  
+ 
+2.1.  Informações Gerais  
+O Documento 5050 destina -se à remessa de informações sobre a base de riscos e perdas 
+operacionais, definido nos termos dos artigos 32 a 36 da Resolução CMN nº 4.557, de 23 de 
+fevereiro de 2017, Circular nº 3.979, de 30 de janeiro de 2020 , modificada pelo artigo 13 da 
+Resolução  BCB nº 447, de 19 de dezembro de 2024 , e Instrução Normativa BCB Nº 33, de 29 de 
+outubro de 2020.  
+Ele deve ser encaminhado semestralmente:   
+• Pela instituição líder do conglomerado prudencial, contendo os dados relativos a todos os 
+participantes; ou  
+• Pela própria instituição, se ela não fizer parte de conglomerado prudencial.  
+ 
+O documento é devido para as datas -bases de junho e dezembro. As remessas devem ser  
+encaminhadas por data -base obedecendo a critério sequencial. Dessa forma, é necessário o 
+encaminhamento do documento relativo à data -base anterior para que o sistema recepcione com 
+sucesso o documento da data -base subsequente.  
+Estão obrigadas ao encaminhamento as entidades:  
+• Integrantes do segmento de regulação “S1”, desde a data -base de dezembro de 2020; e  
+• Integrantes do segmento de regulação “S2”, desde a data -base de junho de 2021.  
+• Integrantes do segmento de regulação “S3”, a partir da data -base junho  de 2026. (NR)  
+ 
+O prazo para envio do Documento 5050 é o 5º dia útil do quarto mês subsequente à data -base.  
+O encaminhamento dos arquivos pelas Instituições Financeiras deve ser feito no formato XML 
+(eXtensible Markup Language) por meio do Sistema de Transmissão de Arquivos – STA.  
+ 
+2.2.  Abrangência Temporal do Documento  
+A cada envio será necessária a apresentação das informações não só da data -base em questão, 
+mas também dos 19 semestres anteriores a ela. Ou seja, cada apresentação abrange o período de 
+10 anos.  
+➢ Devem ser enviados os eventos em que a data da última contabilização esteja compreendida 
+nos últimos 10 anos,  bem como aqueles que, mesmo anteriores a esse período, produzam 
+efeitos futuros. Entre os eventos anteriores que produz em efeitos futuros, estão as provisões 
+(processos de perda provável) e os valores em risco (processos de perda possível ou remota) 
+(NR) . 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  Alternativamente ao período pregresso definido acima , temos os seguintes cronogramas:  
+Para instituições classificadas nos segmentos S1 e S2:  
+• Os documentos enviados até a data -base de dezembro/2021 devem conter a data -base em 
+questão e os 9 semestres anteriores a ela (total de 5 anos);  
+• Os documentos enviados nas datas -bases de junho/2022 e dezembro/2022 devem conter a 
+data -base em questão e os 11 semestres anteriores a ela (total de 6 anos);  
+• Os documentos enviados nas datas -bases de junho/2023 e dezembro/2023 devem conter a 
+data -base em questão e os 13 semestres anteriores a ela (total de 7 anos);  
+• Os documentos enviados nas datas -bases de junho/2024 e dezembro/2024 devem conter a 
+data -base em questão e os 15 semestres anteriores a ela (total de 8 anos);  
+• Os documentos enviados nas datas -bases de junho/2025 e dezembro/2025 devem conter a 
+data -base em questão e os 17 semestres anteriores a ela (total de 9 anos);  
+• Os documentos enviados a partir da data -base de junho/2026 devem conter a data -base em 
+questão e os 19 semestres anteriores a ela (total de 10 anos).  
+ 
+Para instituições classificadas no segmento S3:  (NR)  
+• Os documentos enviados até a data -base de junho /202 6 devem conter a data -base em 
+questão e os 9 semestres anteriores a ela (total de 5 anos);  
+• Os documentos enviados até a data -base de dezembro/2026 e junho /202 7 devem conter a 
+data -base em questão e os 11 semestres anteriores a ela (total de  6 anos);  
+• Os documentos enviados até a data -base de dezembro/2027 e junho /202 8 devem conter a 
+data -base em questão e os 13 semestres anteriores a ela (total de 7 anos);  
+• Os documentos enviados até a data -base de dezembro/2028 e junho /202 9 devem conter a 
+data -base em questão e os 13 semestres anteriores a ela (total de 8 anos);  
+• Os documentos enviados até a data -base de dezembro/2029 e junho /2030 devem conter a 
+data -base em questão e os 13 semestres anteriores a ela (total de 9 anos);  
+• Os documentos enviados a partir da data -base de dezembro /2030 devem conter a data -base 
+em questão e os 19 semestres anteriores a ela (total de 10 anos).   
+ 
+ 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  3. VISÃO CONCEITUAL DO DOCUMENTO  
+Para efeito da criação da Base de Risco Operacional os eventos de riscos e perdas operacionais foram 
+divididos em dois grupos, sendo que os eventos cujos valores estão acima de determinados limiares são 
+informados de forma individualizada, e os que estão a baixo desses limiares são informados de forma 
+consolidada.   
+De forma esquemática, o documento de remessa é composto por 1 cabeçalho e 5 blocos de informações 
+descritos a seguir (NR) .  
+ 
+ 
+Cabeçalho  
+ Contém as informações gerais do documento, como por exemplo, código do documento, código 
+do conglomerado prudencial, CNPJ da Líder, data -base, etc.  
+Bloco 1 - Eventos Individualizados  
+Contém os registros individualizados de cada evento que atende a pelo menos um dos critérios a seguir:  
+o O valor da perda bruta  (perda efetiva + provisões)  acumulada, de que trata o inciso 
+V do art. 5º da Circular nº 3.979/20, seja igual ou superior a R$1.000,00 (mil reais); 
+ou  
+Documento 5050
+Cabeçalho
+Eventos de Risco Operacional Informados de Forma Individualizada
+Evento 1
+Evento 2
+...
+enésimo Evento
+Eventos de Risco Operacional Informados de Forma Consolidada
+Evento 1
+Evento 2
+...
+enésimo Evento
+Sistemas de Origem
+Sistema 1 
+Sistema 2
+...
+enésimo sistema
+Contas de subtítulo interno
+Conta 1
+Conta 2
+...
+enésima Conta
+Eventos que deixaram de ser informados de Forma Invidualizada
+Evento 1
+Evento 2
+...
+enésimo Evento
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  o O valor do risco não coberto por provisão, de que trata o inciso III do art. 6º da 
+Circular nº 3.979/20, for igual ou superior a R$10.000.000,00 (dez milhões de 
+reais).  
+ 
+Bloco 2 - Eventos Consolidados  
+Contém as informações consolidadas  de todos os eventos que não atendam aos critérios para serem 
+informados de forma individualizada.  
+O nível de consolidação  será feito de acordo com a classificação do evento em uma das categorias de nível 
+1 definidas no Acordo de Capita l Basileia II (vide Capítulo 10, Anexo I - Categorias Nível 1 de Basileia II ). 
+➢ Obs.: Levando em consideração que atualmente existem 8 categorias no nível 1 de 
+Basileia II, serão informados , no máximo , 8 diferentes eventos consolidados.  
+ 
+Bloco 3 - Tabela de Sistemas de Origem  
+Contém a relação dos sistemas informatizados utilizados pela entidade onde estão armazenadas as 
+informações apresentadas no documento.  
+ 
+Bloco 4 - Tabela de Contas de Subtítulo Interno  
+Contém a codificação das rubricas contábeis de uso interno da entidade no registro dos eventos 
+informados no documento.  
+ 
+Bloco 5 – Exclusão do bloco de Eventos Individualizados  
+Contém os registros de eventos que deixaram de ser informados de forma individualizada pelos motivos 
+elencados no anexo 10.4 . (NR) 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  4. CRITÉRIOS DE AGREGAÇÃO DAS PERDAS  
+Requer -se o uso consistente de critérios de agregação dos riscos e perdas operacionais, em especial dos 
+eventos que tenham uma causa comum , com documentação em política interna.  (NR)  
+Os critérios de agregação e de integridade da base devem seguir o documento do BIS: Operational Risk – 
+Supervisory Guidelines for the Advanced Measurement Approaches (BCBS196) . (NR)  
+São exemplos  não exaustivos  de critérios mínimos de agregação: ação civil pública, diferentes perdas 
+decorridas de um incidente cibernético  e perdas por fraude para um mesmo titular de cartões de crédito. 
+(NR)   
+As perdas associadas a um mesmo evento de risco operacional devem ser identificadas e agrupadas, com 
+base em critérios consistentes e passíveis de verificação . Não devem ser agrupadas em um mesmo evento 
+de risco operacional as perdas operacionais que não tenham uma causa comum entre elas.  
+A agregação poderá ser feita em um único evento (idEvento único) ou informada por meio do campo 
+idEventoAgregador. (NR)  
+5. CISÕES, FUSÕES, AQUISIÇÕES E INCORPORAÇÕES  
+No caso de fusões, incorporações e aquisições, devem ser incluídas na base de dados de risco operacional 
+todas as perdas operacionais de cada instituição envolvida no respectivo processo, excetuadas as relativas 
+às instituições dispensadas de constituir ba se de dados de risco operacional, nos termos da Resolução 
+CMN nº 4.557, de 2017.  
+No caso de cisões, a base de dados de risco operacional das instituições resultantes do processo deve 
+incluir eventuais alterações em relação à situação anterior à cisão, considerando os produtos, os serviços, 
+as atividades, os processos e os sistemas de c ada instituição resultante.  
+ 
+6.  DESCARTE DE DADOS  
+Somente em casos excepcionais e com a devida fundamentação, as instituições poderão, em observância 
+ao disposto no art. 9º da Circular nº 3.979/20 e na Instrução Normativa BCB Nº 33/20 , encaminhar 
+solicitações de descarte de dados da sua base.  
+Tal pleito deve ser encaminhado por Correio Eletrônico (Sistema BC Correio) para o respectivo 
+departamento responsável pela supervisão direta da entidade , que comunicará o resultado do  pleito da 
+instituição,  no prazo máximo de 90 dias. Findado o prazo de 90 dias sem manifestação, a solicitação será 
+considerada aceita.  (NR)  
+ 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  7. RISCO LEGAL - CONTINGÊNCIAS PASSIVAS  
+7.1.  Considerações Gerais  (NR)  
+Os eventos de risco legal, que constituem uma espécie  de risco operacional, por força do art. 32, 
+§1º da Resolução CMN nº 4.557, de 2017, devem  seguir as definições e procedimento geral de 
+registro de eventos no Documento 5050.  
+ 
+Contudo, considerando que parte dos eventos de risco legal manifesta -se sob a forma de litígios, 
+descrevem -se adiante definições  e procedimentos especiais para o registro no Documento 5050 
+desses eventos que se manifestam e são apreendidos pelas entidades como contingências 
+passivas.  
+Entende -se: 
+• litígios:  as disputas e divergências envolvendo procedimentos contenciosos 
+para solução da disputa, seja no âmbito do Poder Judiciário, nas instâncias 
+administrativas ou solução privada, como a arbitragem ; 
+• contingências passivas:  provisões e passivos contingentes conforme previstos  
+no CPC 25, recepcionado pela Res olução CMN 3.823/2009.   
+ 
+Os eventos trabalhistas estão relacionados à resolução de litígios envolvendo a legislação 
+trabalhista e condições de trabalho. São os eventos registrados na conta 4.9.9.35.10 -5 
+(4.9.9.35.10.00 -5 no COSIF 1.5)  do plano contábil.  
+ 
+Os eventos fiscais relacionam -se a litígios perante as autoridades fiscais relativos a tributos devidos 
+pela entidade, seja como contribuinte ou responsável tributário. Abrangem qualquer item 
+discutido nestes litígios  e seus acessórios , como o valor principal do tributo não pago, as multas, 
+os juros incidentes, as penalidades e custos relacionados ao não pagamento ou pagamento em 
+atraso. São os eventos registrados nas contas 4.9.9.35.20 -8 ou 4.9.9.35.25 -3 (4.9.9.35.20.00 -2 ou 
+4.9.9.35.25.00 -7 no COSIF 1.5)  do plano contábil.  
+ 
+Os eventos cíveis relacionam -se aos demais pleitos movidos contra ou pela entidade, desde 
+relações com clientes, fornecedores ou terceiros. Sua categorização específica será determinada 
+com base na alegação subjacente do pleito.  São os eventos registrados na conta 4.9.9.35.30 -5 
+(4.9.9.35.30.00 -9 no COSIF 1.5)  do plano contábil.   
+7.2.  Procedimentos para registro de eventos de Risco Legal e contingências 
+passivas  
+A inserção da perda decorrente de um evento  de risco  legal no Documento 5050 deve ocorrer, de 
+forma individualizada ou consolidada,  quando for reconhecida uma “despesa” relativa a esse 
+evento. Para efeitos do disposto nesta seção, uma “despesa” abrange um dispêndio financeiro ou 
+o reconhecimento de uma provisão, esta última nos termos da Resolução CMN nº 3.823, de 2009.  
+ 
+O pagamento ou provisionamento de honorários advocatícios e/ou custas processuais configuram 
+perdas operacionais e devem ser lançados no evento correspondente com sinal positivo.  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL   
+Custos com advogados internos (ex.: departamento jurídico) ou custos fixos externos que não 
+podem ser atribuídos a evento específico não deverão compor valores de perda no Documento 
+5050.  
+ 
+Nas situações em que a parte incontroversa de um processo é paga, essa parcela passa a constituir 
+perda efetiva. Se eventualmente restarem valores provisionados para discussão de outros temas, 
+ambas as informações, perda efetiva e provisões, devem ser regi stradas no Documento 5050.  
+ 
+Eventuais ressarcimentos relativos à perda legal, decorrentes de cláusulas de reembolso em 
+acordo de aquisição, cisão ou decorrentes de seguro, serão registrados na forma de recuperação 
+com valor negativo para o evento correspondente. O mesmo tratamento se rá também aplicado às 
+custas processuais inicialmente pagas pela instituição e posteriormente atribuídos à contraparte 
+por decisão judicial (como o ônus de sucumbência).  
+ 
+Para os passivos contingentes em que não há despesas incorridas e não houve necessidade de 
+constituição de provisões, tais como os processos analisados individualmente e classificados como 
+risco de perda remoto ou possível, requer -se o registro no Documento 5050 da informação do 
+“valor d o risco” dessa contingência, tal como existir no sistema legado onde são avaliadas as 
+contingências.  
+ 
+Os valores registrados no DRO relativos ao risco legal devem ser compatíveis e passíveis de 
+reconciliação contábil. Ou seja, o somatório dos saldos de provisão dos blocos individualizados e 
+consolidados devem ser iguais ao somatório de saldos de subconjunt o específico das contas de 
+contingências no Balanço Patrimonial . (NR)   
+ 
+7.3.  Situações especiais  
+Provisões massificadas: os processos com provisões massificadas são processos relativos a causas 
+similares, cuja provisão é obtida a partir de metodologia de cálculo estatístico que considere o tipo 
+de causa como um todo, conforme preconizado pelo CPC -25, itens 24 e 39. Respeitadas as 
+diferenças entre os grupos de causas, podem ser aplicadas a qualquer natureza de contingência 
+passiva, sendo mais comum nas esferas trabalhista e cível.  (NR)  
+ 
+No Documento 5050 devem ser identificados os eventos de contingências passivas cuja estimativa 
+de provisão faz uso de métodos massificados, diferenciando -os dos casos de contingências que são 
+avaliados individualmente.  Também devem ser registrados em cada evento o valor da provisão 
+obtido pela metodologia de tratamento massificado, ainda que sejam valores idênticos para todo 
+o grupo de causas similares.  
+ 
+Além dos valores de provisão, que podem variar no decurso da contingência, devem ser registrados 
+individualmente em cada evento todas as demais informações de perdas que ocorrerem 
+concomitantemente, tais como perdas definitivas, recuperações e correlatas, do mesmo modo que 
+os eventos de avaliação individual do Documento 5050 . Os campos relacionados com a 
+probabilidade de perda, por outro lado, não devem ser informados.  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  8. DESCRIÇÃO DOS CAMPOS DO DOCUMENTO 5050  
+Neste capítulo são descritas todas as informações que devem ser incluídas no documento, sua 
+conceituação, descrição detalhada, características técnicas e o nome do campo no arquivo XML.  
+O documento é composto por 1 cabeçalho e 5 blocos de informações, que são detalhados ao longo deste 
+capítulo.  
+8.1.  Cabeçalho  
+8.1.1.  Conceituação  
+O cabeçalho do Documento 5050 deverá conter os elementos que caracterizam a informação 
+que está sendo encaminhada.  
+ 
+8.1.2.  Campos Informados no Cabeçalho  
+a) Padrão de codificação e processamento do documento XML  
+Indica a versão e o padrão de codificação XML que está sendo utilizad o no arquivo envido 
+e deve ser preenchido no formato:  
+ 
+<?xml version1.0" encoding="UTF -8"?>  
+ 
+O encoding , além de UTF -8, pode ser ISO -8859 -1, EBCDIC -CP-US, UTF -16 ou US -ASCII  
+ 
+b) Código do documento (campo: codigoDocumento)  
+Informa o documento que está sendo encaminhado e deve ser sempre informado 5050.  
+ 
+c) Data Base do documento (campo: dataBase)  
+Indica a data -base da informação, devendo ser sempre informada com 7 dígitos no padrão 
+“AAAA -MM”, onde AAAA = ano da data -base e MM = mês da data -base.  
+Exemplo: 2020 -12. 
+ 
+d) Código do Conglomerado (campo: codigoConglomerado)  
+Indica o código do Conglomerado Prudencial com 8 posições, conforme registro no 
+Unicad.  
+Exemplo: C0099999  
+ 
+e) CNPJ (campo: cnpj)  
+Informa os 8 primeiros números do CNPJ da instituição líder do conglomerado prudencial, 
+sem pontos, barra ou traço.  
+ 
+f) Tipo Remessa (campo: tipoRemessa)  
+Identifica se a remessa é uma inclusão de documento ou substituição de documento já 
+aceito anteriormente e, portanto, já gravado nas bases de dados do Banco Central.  
+Deve ser informado:  
+• "I" - Quando se tratar da primeira remessa do documento para a data -base.  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  • "S" - Para substituir documento já enviado e aceito pelos sistemas do Bacen.  
+Obs. Se o documento inicialmente enviado for rejeitado pelos sistemas, o próximo envio 
+ainda deverá ser do tipo inclusão ("I").  
+ 
+ 
+g) Opção por Informar Provisão de Forma Acumulada no Semestre (campo: 
+opcaoPorProvisaoAcumulada)  
+Identifica se a entidade opta por informar o valor da provisão (campo: valorProvisao) 
+relativa aos períodos anteriores à entrada em vigor da Circular nº 3.979/20  de forma 
+acumulada no semestre.  
+  
+Deve ser informado “S” para sim ou “N” para não, sendo:  
+• “S” – Quando a opção for por informar o valor da provisão de forma acumulada no 
+último dia do semestre; ou  
+• “N” – Quando a opção for por informar as datas efetivas de contabilização do valor 
+da provisão durante o semestre.  
+ 
+Esse campo não tem efeito sobre as informações relativas a eventos ocorridos a partir da 
+entrada em vigor da Circular nº 3.979/20.  
+ 
+8.2.  Bloco 1 - Eventos Individualizados  
+ 
+8.2.1.  Conceituação  
+Todos os eventos de Risco Operacional cujo valor da perda bruta acumulada, de que trata o 
+inciso V do art. 5º da Circular nº 3.979, seja igual ou superior a R$1.000,00 (mil reais), ou cujo 
+valor do risco não coberto por provisão, de que trata o inciso III do art. 6º da referida Circular, 
+for igual ou superior a R$10.000.000,00 (dez milhões de reais) deverão ser informados 
+individualmente e com os campos descritos nesta seção.  Eventos que pertençam a um grupo 
+de eventos agregado s que atinja o limite de ident ificação  também devem ser informados de 
+forma individualizada. (NR)  
+ 
+Os eventos abaixo dos limiar es mínimo s tratados no parágrafo anterior  não precisam  ser 
+informados de forma individualizada  e pode m ser consolidados  no bloco do documento 
+específico para isso, descrito no Capítulo 8, item 8.3.  
+ 
+É importante observar que, em função das características do evento, alguns campos podem 
+não ser obrigatórios, situação que iremos esclarecer nas descrições a seguir e ao longo de 
+todo esse documento.  
+8.2.2.  Campos dos Eventos Individualizados  
+a) Identificação Individual do Evento (campo: idEvento)  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  O campo idEvento é obrigatório e deve ser preenchido com um código alfanumérico de 
+até 40 caracteres gerado pela entidade informante. Cada evento deve ser identificado 
+inequivocamente por um idEvento, seja uma perda efetiva, uma provisão, um evento de 
+risco ou outros.  (NR)  
+ 
+O idEvento atribuído deve ser único e manter consistência ao longo das diferentes datas -
+bases enviadas. Cabe a Entidade Supervisionada (ES)  garantir a unicidade dos 
+identificadores informados.  
+ 
+ 
+b) 1º Nível de Classificação de Basileia II (campo: categoriaNivel1)  
+Os eve ntos  do Documento 5050 devem ser obrigatoriamente classificados em uma das 
+categorias de nível 1 definidas no Acordo de Capita l Basileia II1 em seu Anexo 9 e 
+ratificadas no art. 32, §2º da Resolução CMN nº4557, de 2017.  
+ 
+Os eventos do Documento 5050 serão preenchidos com um código de 1 a 8, conforme a 
+tabela constante do Capítulo 10 destas instruções, Anexo I - Categorias Nível 1 de Basileia 
+II. 
+ 
+c) 2º Nível de Classificação de Basileia II (campo: categoriaNivel2)  
+Os eventos do Documento 5050 devem ser obrigatoriamente classificados em uma das 
+categorias de nível 2 do Anexo 9 do Acordo de Capitais Basileia II, reproduzidas no Anexo 
+II da Circular 3.979.  
+ 
+Essa informação é facultativa  para os eventos registrados na base de dados 
+(contabilizados) antes da entrada em vigor da Circular nº 3.979.  
+ 
+Os eventos serão preenchidos com um código de 11 a 86, conforme a tabela constante do 
+Capítulo 10 destas instruções,  Anexo II - Categorias Nível 2 de Basileia II . 
+ 
+d) Tipo de Avaliação ( campo: tipoAvaliacao)  (NR)  
+Esta classificação é requerida apenas para as contingências passivas. Nesse campo deve 
+ser informado se a contingência é analisada de forma individual ou de forma massificada.  
+ 
+O campo é alfanumérico e os valores possíveis são “I”,  “IE”,  “M” , “ME”  ou “NA”, sendo:  
+• “I” - Se a contingência é avaliada de forma individual;  
+• “IE” – Se a contingência está encerrada e foi avaliada de forma individual;  
+• “M” - Se a contingência é avaliada de forma massificada;  
+• “ME” – Se a contingência está encerrada e foi avaliada de forma massificada; ou  
+• “NA” – Se não for requerida (não se aplica).  
+ 
+Quando o tipo de avaliação for massificado não devem ser informados os dados relativos 
+à probabilidade de perda e valor em risco.  
+ 
+ 
+1 BANK OF INTERNATIONAL SETTLEMENTS (BIS): International Convergence of Capital Measurement and 
+Capital Standards: A Revised Framework: Consolidated = Basel II. June 2006.  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  Nos casos de um evento informado individualmente , cuja avaliação era feita de forma 
+massificada (campo tipoAvaliacao igual a “M”) e passou  a ser avaliado de forma individual 
+(campo tipoAvaliacao igual a “I”), nos termos do CPC -25, este evento deverá ter seu 
+preenchimento devidamente adequado para a nova forma de avaliação, inclusive 
+passando a informar os campos relativos à probabilidade de perda e ao valor em risco.  
+ 
+Quando os processos forem encerrados, as avaliações devem ser alteradas para “IE” ou 
+“ME”, conforme estava avaliada em seu último estado. (NR)  
+ 
+e) Unidade de Negócio (campo: unidadeNegocio)  
+Este campo deve identificar a qual categoria de unidade de negócio a perda se relaciona, 
+conforme tabela constante do   
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL   Anexo III - Unidades de Negócio . 
+➢ O critério de classificação do evento deve ser definido na política interna da 
+entidade.   
+ 
+f) Data de Descoberta do Evento ( campo: dataDescoberta)  
+O critério para definição de qual data será considerada como data da descoberta deverá 
+ser definido em política interna. O campo leva o formato AAAA -MM -DD.  
+ 
+Informação facultativa  para os eventos registrados na base de dados  antes da entrada em 
+vigor da Circular nº3.979, de 2020.  
+ 
+➢ As definições de data do Documento 5050 seguem a nova abordagem padronizada 
+Standardised Approach , também chamada de SA ou SMA, definida pelo BIS para 
+cálculo de requerimento de capital para risco operacional (BANK OF INTERNATIONAL 
+SETTLEMENTS – BIS: Basel III:  Finalising post -crisis reforms . Basel , December  2017 ).  
+ 
+g) Data de Ocorrência do Evento ( campo: dataOcorrencia)  
+O critério para definição de qual data será considerada como data da ocorrência deverá 
+ser definido em política interna.  
+ 
+O campo leva o formato AAAA -MM -DD, sendo  AAAA o ano, MM o mês e DD o dia da data 
+da ocorrência.  
+ 
+h) Valor Total da Perda Efetiva ( campo: totalPerdaEfetiva)  
+Esse campo deve ser preenchido com o valor apurado para a perda em reais (R$). É um 
+valor anterior à dedução de qualquer montante ressarcido por via judicial, seguro, ou 
+qualquer outro meio.  
+ 
+A convenção adotada é que perda é lançada com valor positivo. Em caso de ausência de 
+valor total de perda efetiva, o campo deve ser informado como zero.  
+ 
+i) Valor Total Provisionado ( campo: totalProvisao)  
+Esse campo deve ser preenchido com o valor da provisão existente para aquele idEvento 
+na data -base.  
+ 
+A convenção adotada é que provisão é lançada com valor positivo. Se não for requerida, 
+deve ser informado o valor zero.  
+ 
+j) Valor Total Recuperado ( campo: totalRecuperado)  
+No caso de recuperação da perda, esse campo deverá ser preenchido com o total em reais 
+(R$) dos valores efetivamente ressarcidos (liquidados) por via judicial, seguro, ou qualquer 
+outro meio, desde o primeiro registro do Documento 5050.  
+ 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  Os direitos de reembolso, reconhecidos na forma do CPC 25, devem ser informados nesse 
+campo.  
+ 
+A convenção adotada é que recuperação é lançada com valor negativo.  
+ 
+➢ Este campo não poderá superar o campo de valor total de perda efetiva a ele 
+associado, nem o total da provisão.  
+➢ Valores de estorno de perdas finais ou provisões lançadas indevidamente não devem 
+ser informados como valor recuperado.  
+➢ Não se deve lançar valor de estorno sem que a perda ou provisão original faça parte 
+da base informada.  
+ 
+k) Valor Total em Risco da Contingência ( campo: valorTotalRisco)  
+Esta informação é requerida apenas para as contingências passivas , que sejam avaliadas 
+individualmente e que a probabilidade da perda seja provável , possível ou remota.  (NR)  
+ 
+Esse campo deve ser preenchido com o valor em risco da contingência, estimado nos 
+termos do Pronunciamento nº 25 do Comitê de Procedimentos Contábeis (CPC -25), de 
+acordo com a Resolução CMN nº 3.823, de 16 de dezembro de 2009.  (NR)  
+ 
+O que se espera é o lançamento do saldo das contingências passivas de perda provável , 
+possível ou remota, na data -base do Documento 5050.  (NR)  
+ 
+A convenção adotada é que o valor total em risco da contingência é lançado com valor 
+positivo.  
+ 
+Observação: O valor mínimo para um evento ser incluído no campo valor total em risco de 
+contingência é R$10.000.000,00 (dez milhões de reais). Caso contrário, ele não deve ser 
+informado.  
+ 
+l) Natureza da Contingência ( campo: naturezaContingencia)  
+Esta informação é requerida apenas para as contingências passivas. Deve -se informar qual 
+o tipo de contingência, por natureza.  (NR)  
+ 
+Essa classificação principal deve ser alinhada às contas contábeis.  
+ 
+Os valores possíveis para definir a natureza da contingência são:   
+• “TRI” - Tributária;  
+• “TRA” - Trabalhista;  
+• “CIV  “- Cível;  
+• “OUT” – outras contingências não registradas nas contas 4.9.9.35.10 -5, 4.9.9.35.20 -
+8, 4.9.9.35.25 -3 ou 4.9.9.35.30 -1; ou (NR)  
+• “NA” – não se aplica, caso não seja requerida.  
+ 
+m) Código do Sistema de Origem ( campo: codSistemaOrigem)  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  Nesse campo deve ser informado o código do sistema legado mais relevante que está 
+fornecendo aquela respectiva informação ao Documento 5050.  (NR)  
+ 
+A ES deve inserir um código alfanumérico de 10 caracteres, indicando qual o sistema 
+legado que originou o referido dado.  
+ 
+O código informado deverá obrigatoriamente constar da tabela de Sistema de Origem 
+detalhada no Capítulo 8, item  8.4, desse documento.  
+ 
+➢  A ES precisa fornecer, como parte do Documento 5050, uma tabela de apoio com 
+os códigos e nomes dos Sistema de Origem descrita no Capítulo 8, item  8.4, desse 
+documento.  
+ 
+n) Código do Evento no Sistema de Origem ( campo: codigoEventoOrigem)  
+Nesse campo deve ser informado o código de identificação no sistema legado do 
+respectivo evento registrado no Documento 5050.  
+ 
+A ES deve inserir um código alfanumérico de até 73 caracteres. Contudo, no caso de o 
+preenchimento ter sido feito de forma manual pela ES, o código a ser utilizado é 
+obrigatoriamente: “MANUAL”.  
+ 
+Seguem exemplos (lista não exaustiva) de identificadores nos sistemas legados:  
+• Código identificador dos processos jurídicos;  
+• Código identificador dos processos administrativos;  
+• Código identificador de fraudes no sistema de cartões de crédito.  
+• Código da apuração de fraude interna.  
+• Código do contrato de crédito para exposição a fraudes em crédito.  
+• Código interno de apuração de perda por erro na tesouraria.  
+ 
+o) Descrição do Evento (campo: descricaoEvento)  
+Este campo deve ser utilizado para uma descrição clara e sucinta do evento (até 200 
+caracteres).  
+ 
+Informação facultativa para os eventos registrados na base de dados (contabilizados) 
+antes da entrada em vigor da Circular nº 3.979, de 2020.  
+ 
+Deve conter informações para validar a classificação atribuída ao evento (categorização, 
+causa, função de negócio etc.), conter motivos e causas do evento de perda, referência a 
+sistemas, processos ou procedimentos que falharam e providências tomadas.  
+ 
+No caso de evento em que houve recuperação de perda (campo totalRecuperado 
+diferente de zero) a descrição do evento deve indicar a origem do ressarcimento.  
+ 
+➢ Observação:  Para que um evento tenha que ser descrito, o valor mínimo da soma 
+das perdas e provisões deve ser de R$1.000.000,00 (um milhão de reais). Caso 
+contrário, esse campo não necessita  ser preenchido.  
+ 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  p) Risco Associado ao Evento (campo: riscoAssociado)  
+Campo a ser utilizado para identificação de eventos de fronteira entre risco operacional e 
+risco de crédito e entre risco operacional e risco de mercado.  
+ 
+Os valores possíveis são:  
+• “C” - Para fronteira com risco de crédito;  
+• "M" - Para fronteira com risco de mercado; ou  
+• "NA" - Caso não se aplique.  
+ 
+Informação facultativa para os eventos registrados na base de dados (contabilizados) 
+antes da entrada em vigor da Circular nº 3.979, de 2020.  
+ 
+q) Identificação de Evento Ligado a Risco social, ambiental  ou climático  (campo: 
+ligado RSAC ) 
+Campo a ser utilizado para identificação de eventos de fronteira entre risco operacional e 
+risco soci al, ambiental  ou clim ático. (NR)  
+ 
+Essa informação é facultativa  para os eventos anteriores a entrada em vigor da Circular nº 
+3.979.  
+ 
+Os valores possíveis são:  
+• “S” – Está ligado a risco social, ambiental ou climático ;  
+• “N” – Não ligado a risco social, ambiental ou climático . 
+ 
+r) Identificação de Evento Ligado a Risco Cibernético ( campo: ligadoRiscoCibernetico)  
+Campo a ser utilizado para identificação de eventos de fronteira entre risco operacional e 
+risco cibernético.  
+ 
+Essa informação é facultativa  para os eventos anteriores a entrada em vigor da Circular nº 
+3.979.  
+ 
+Os valores possíveis são:  
+• “S” – Sim, ligado a risco cibernético; ou  
+• “N” – Não ligado a risco cibernético.  
+ 
+➢ Observação: Os eventos de perda classificados na categoria 'Falhas em sistemas, 
+processos ou infraestrutura de tecnologia da informação' frequentemente são 
+associados a riscos cibernéticos . 
+ 
+ 
+s) Identificação de Negócio Descontinuado ( campo: negocioDescontinuado)  
+Esta informação é facultativa  e se refere a eventos que podem ser diretamente atribuíveis 
+a linhas de negócio, produtos ou serviços que foram descontinuados, seja por venda de 
+carteira específica, alteração societária ou por decisão comercial.  
+ 
+Os valores possíveis são “S”, “N”, sendo:  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  • “S” – Sim, ligado a caso de descontinuidade; ou  
+• “N” – Não ligado a negócio descontinuado;  
+ 
+t) Identificação da Entidade ( campo: idBacen)  
+O campo idBacen recebe o código ID Bacen, registrado no Sistema UNICAD, da entidade 
+legal em que ocorreu a perda, provisão ou risco. Nos casos das dependências no exterior, 
+para as quais não há ID Bacen, deve -se utilizar o código da instalação (ID Instal).   
+ 
+u) Detalhamento das Probabilidades de Perdas  
+O detalhamento das probabilidades de perdas só deve ser feito para os eventos avaliados 
+individualmente  (campo tipoAvaliação = “I”). Para os eventos avaliados de forma 
+massificada (campo tipoAvaliação = “M”) esse detalhamento não deve ser informado . 
+ 
+Os dois campos subsequentes deverão ser preenchidos para cada probabilidade de perda 
+(provável, possível e remota) relacionada com o evento em análise.  
+ 
+No caso de um evento não possuir os três níveis de probabilidade de perda, deverão ser 
+informados apenas os existentes.  
+ 
+u.1) Probabilidade de Perda ( campo: probabilidadePerda)  
+Esta informação é requerida apenas para as contingências passivas  que sejam avaliadas 
+individualmente.  (NR)  
+Esse campo deve ser preenchido com a classificação da probabilidade de perda da 
+contingência, nos termos do CPC -25 e os valores possíveis são:  
+• “PR” - Provável;  
+• “PO” - Possível; ou  
+• “RE” - Remota.  
+ 
+u.2) Valor em Risco da Contingência ( campo: valorRisco)  
+Esta informação é requerida apenas para as contingências passivas que sejam avaliadas 
+individualmente.  
+Esse campo deve ser preenchido com o valor em risco da contingência, estimado nos 
+termos do Pronunciamento nº 25 do Comitê de Procedimentos Contábeis (CPC -25), de 
+acordo com a Resolução CMN nº 3.823, de 16 de dezembro de 2009.  (NR)  
+v) Detalhamento do registro das contabilizações relacionadas ao Evento  
+ 
+Os nove  campos subsequentes deverão ser preenchidos para cada contabilização 
+relacionada com o evento em análise.  
+ 
+v.1) Data da Contabilização ( campo: dataContabilizacao)  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  Nesse campo deve ser informada a data da contabilização do evento de perda efetiva ou 
+da provisão, inclusive para as provisões contabilizadas antes da entrada em vigor da 
+Circular nº 3.979, de 2020.  
+Porém, para as instituições financeiras que não possuírem essa informação para as 
+provisões contabilizadas antes da entrada em vigor da Circular nº 3.979, de 2020, é 
+possível optar por informar essa data como sendo o último dia do semestre da 
+contabilizaçã o. Nesse caso, deve ser indicada a opção por informar a provisão de forma 
+acumulada no semestre preenchendo o campo “opcaoPorProvisaoAcumulada” com a 
+letra “S” no cabeçalho do documento (vide Capítulo 8, item 8.1.2, letra g).  
+A data de contabilização obedecerá ao formato AAAA -MM -DD, onde AAAA índica o ano, 
+MM indica o mês e DD indica o dia.  
+v.2) Conta do Balanço Analítico – Débito ( campo: contaBalAnaliticoDebito)  
+Este campo deve conter o subtítulo contábil de nível interno da instituição que recebeu o 
+lançamento a débito da perda operacional efetiva  ou provisão. Campo numérico de até 
+24 dígitos.  
+Esse campo deve ser compatível com a conta informada no item v.4 (Conta COSIF – 
+Débito). (NR)  
+O subtítulo informado deve obrigatoriamente constar da Tabela de Subtítulos de Nível 
+Interno detalhada no Capítulo 8, item  8.5, desse documento.  
+➢ A entidade  precisa fornecer, como parte do Documento 5050, uma tabela de apoio 
+com as Contas de Subtítulo Interno descrita no Capítulo 8, item 8.5 desse 
+documento.  
+ 
+v.3) Conta do Balanço Analítico – Crédito (campo: contaBalAnaliticoCredito)  
+Este campo deve conter o subtítulo contábil de nível interno da instituição que recebeu o 
+lançamento a crédito da perda operacional efetiva  ou provisão. Campo numérico de até 
+24 dígitos.  
+Esse campo deve ser compatível com a conta informada no item v.5 (Conta COSIF – 
+Crédito).  (NR)  
+O subtítulo informado deve obrigatoriamente constar da Tabela de Subtítulos de Nível 
+Interno detalhada no Capítulo 8, item  8.5, desse documento.  
+➢ A entidade  precisa fornecer, como parte do Documento 5050, uma tabela de apoio 
+com as Contas de Subtítulo Interno descrita no Capítulo 8, item 8.5 desse 
+documento.  
+ 
+v.4) Conta Cosif - Débito ( campo: contaCosifDebito)  (NR)  
+Ver anexo V  
+v.5) Conta Cosif – Crédito ( campo: contaCosifCredito)  (NR)  
+Ver anexo V  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL   
+v.6) Perda Efetiva Contabilizada (campo: valorPerdaEfetiva)  
+Esse campo deve ser preenchido com o valor bruto apurado para a perda em reais (R$). É 
+um valor anterior à dedução de qualquer montante ressarcido por via ju dicial, seguro, ou 
+qualquer outro meio.  
+A convenção adotada é que a perda deve ser lançada com valor positivo.  (NR)  
+v.7) Provisão Contabilizada ( campo: valorProvisao)  
+Este campo é requerido apenas  para as contingências passivas.  
+Deve ser preenchido com o valor da provisão existente para aquele evento na data -base, 
+inclusive para as provisões contabilizadas antes da entrada em vigor da Circular nº 3.979.  
+Porém, para as entidades  que não possuírem essa informação separada pelas respectivas 
+datas de contabilização para as provisões contabilizadas antes  da entrada em vigor da 
+Circular nº 3.979/20, é possível optar por informar a provisão acumulada no semestre 
+num lançamento único com data de contabilização no último dia do semestre. Nesse caso, 
+deve ser indicada a opção por informar a provisão de forma a cumulada no semestre 
+preenchendo o campo “ opcaoPorProvisaoAcumulada ” com a letra “S” no cabeçalho do 
+documen to (vide Capítulo 8, item 8.1.2, letra g). 
+A convenção adotada é que provisão é lançada com valor positivo. Se não for requerida, 
+deve ser informado o valor zero.  (NR)  
+  
+v.8) Recuperação Contabilizada ( campo: valorRecuperacao)  
+ 
+No caso de recuperação da perda, esse campo deverá ser preenchido com o total em reais 
+(R$) dos valores efetivamente ressarcidos (liquidados) por via judicial, seguro, ou qualquer 
+outro meio.  
+ 
+Os direitos de reembolso, reconhecidos na forma do CPC 25, devem ser informados nesse 
+campo.  
+ 
+A convenção adotada é que recuperação é lançada com valor negativo.  
+ 
+As contabilizações de valores recuperados devem ser exclusivas, ou seja, nestas 
+contabilizações os campos valorPerdaEfetiva  e valorProvisao  devem ter valores zerados . 
+(NR)  
+ 
+v.9) Fonte da Recuperação ( campo: fonteRecuperacao)  
+ 
+Este campo deve informar a fonte de ressarcimento para eventos de recuperação de 
+perda. (S - no caso de recuperação através de seguro; O - no caso de recuperação por 
+outras formas; NA – não se aplica).   
+ 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  Informação facultativa para os eventos registrados na base de dados (contabilizados) 
+antes da entrada em vigor da Circular nº 3.979, de 2020.  
+ 
+w) Identificação de Agregação  do Evento (campo: idEvento Agregador ) (NR)  
+ 
+O campo idEventoAgregador é opcional e deve ser preenchido com um código 
+alfanumérico de até 40 caracteres, gerado pela entidade informante. Esse identificador 
+permite agrupar eventos que compartilhem o mesmo valor nesse campo.  
+ 
+A criação desse campo atende à necessidade de agregar eventos com a mesma causa raiz, 
+mesmo quando possuem naturezas diferentes. Além disso, eventos com mesma causa 
+raiz e mesma natureza podem ser informados separadamente e, ainda assim, serão 
+agrupados po r meio desse identificador. Essa funcionalidade evita impactos, como 
+alterações contábeis, decorrentes da integração ou desmembramento de eventos em um 
+grupo.  
+ 
+O fato de o evento ter sido informado de forma desagregada não altera o limite de 
+identificação estabelecido pela Circular nº 3.979/2020. Caso o grupo agregado atinja o 
+limite de identificação, todos os eventos que compartilham o mesmo idEventoAgregador 
+devem ser identificados no bloco individualizado, independentemente do valor da perda 
+bruta ou do valor em risco.  
+ 
+Para fins de cálculo do componente LC, previsto no artigo 11 da Resolução BCB nº 
+356/2023, serão considerados os valores do grupo agregado.  
+8.3. Bloco 2 - Eventos Consolidados  
+8.3.1.   Conceituação  
+Todos os eventos de Risco Operacional cujo valor da perda bruta acumulada (inciso V, do art. 
+5º, da Circular 3.979) seja inferior a R$1.000,00 (mil reais) deverão ser informados de forma 
+consolidada  contendo os campos descritos no Capítulo 8, item 8.3.2 .  
+ 
+A consolidação  deve ser feita levando em consideração a classificação do evento de acordo 
+com as categorias de nível 1 definidas no Acordo de Capitais Basileia II (vide Anexo I - 
+Categorias Nível 1 de Basileia II ). 
+ 
+Na hipótese de um evento informado anteriormente nesse bloco consolidado superar os 
+limiares mínimos estabelecidos para consolidação, o referido evento deverá passar a ser 
+informado de forma individualizada seguindo as instruções constantes do Capítulo 8, item 
+8.2. 
+ 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  8.3.2.   Campos dos Eventos Consolidados  
+Os campos a seguir devem ser preenchidos segundo os critérios de Basileia II, para os quais 
+os eventos contendo perdas efetivas e provisões devem ser lançados com vinculação à 
+primeira data de contabilização.  
+ 
+a) Categoria Nível 1 do Bloco Consolidado (campo: categoriaNivel1Consol)  
+Deve ser informado a qual categoria Nível 1 as perdas de cada bloco se referem, de 
+acordo com a tabela Categoria Nível 1 do Basileia II, do Anexo 1 desse documento.  
+ 
+b) Número Total de Evento no Bloco ( campo: numEventosTotalConsol)  
+Este campo deve conter a quantidade de eventos consolidados relativos à categoria 
+Nível 1 a que o bloco se refere.  
+ 
+c) Número de Eventos no Semestre ( campo: numEventosSemestreConsol)  
+Este campo deve conter a quantidade de eventos no último semestre consolidados e 
+relativos à categoria Nível 1 a que o bloco se refere.  
+ 
+d) Valor Total Consolidado da Perda Efetiva ( campo: perdaEfetivaTotalConsol)  
+Este campo deve conter a soma de todas as perdas acumuladas (excluídas as provisões) 
+consolidadas e relativas à categoria Nível 1 a que o bloco se refere.  
+ 
+e) Valor Total Consolidado da Perda Efetiva no Semestre ( campo: 
+perdaEfetivaSemestreConsol)  
+Este campo deve conter a soma de todas as perdas acumuladas no último semestre 
+(excluídas as provisões) consolidadas e relativas à categoria Nível 1 a que o bloco se 
+refere.  
+ 
+f) Valor Total Provisionado Consolidado ( campo: provisaoTotalConsol)  
+Este campo deve conter a soma de todas as provisões de todos os eventos consolidados 
+relativos à categoria Nível 1 a que o bloco se refere.  
+ 
+g) Valor Total Provisionado Consolidado – Natureza Cível ( campo: provisaoTotalCIV)  
+Este campo deve conter a soma de todas as provisões de todos os eventos consolidados 
+relativos à categoria Nível 1 a que o bloco se refere, que tenham natureza jurídica 
+definida como CIV , que estão contabilizadas na conta 4.9.9.35. 30-1, até 31.12.2024 
+(conta 4.9.9.35.30.00 -9, a partir de 1.1.2025) . (NR)  
+ 
+h) Valor Total Provisionado Consolidado – Natureza Trabalhista ( campo: 
+provisaoTotalTRA)  
+Este campo deve conter a soma de todas as provisões de todos os eventos consolidados 
+relativos à categoria Nível 1 a que o bloco se refere, que tenham natureza jurídica 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  definida como TRA , que estão contabilizadas na conta 4.9.9.35. 10-5, até 31.12.2024 
+(conta 4.9.9.35.10.00 -5, a partir de 1.1.2025) . (NR)  
+ 
+i) Valor Total Provisionado Consolidado – Natureza Tributária Constitucionais ( campo: 
+provisaoTotalTRI_CONST)  
+Este campo deve conter a soma de todas as provisões de todos os eventos consolidados 
+relativos à categoria Nível 1 a que o bloco se refere, que tenham natureza jurídica 
+definida como TRI, que estão contabilizadas na conta 4.9.9.35.20 -8, até 31.12.2024 
+(conta 4.9.9.35.20.00 -2, a partir de 1.1.2025) . (NR)  
+ 
+j) Valor Total Provisionado Consolidado – Natureza Tributária - Outros ( campo: 
+provisaoTotalTRI_OUTROS)  
+Este campo deve conter a soma de todas as provisões de todos os eventos consolidados 
+relativos à categoria Nível 1 a que o bloco se refere, que tenham natureza jurídica 
+definida como TRI, que estão contabilizadas na conta 4.9.9.35.25 -3, até 31.12.2024 
+(conta 4.9.9.35.25.00 -7, a partir de 1.1.2025) . (NR)  
+ 
+k) Valor Total Provisionado Consolidado –Outros ( campo: provisaoTotalOUTROS)  
+Este campo deve conter a soma de todas as provisões de todos os eventos consolidados 
+relativos à categoria Nível 1 que não foram consideradas nos itens g, h, i ou j.  (NR)  
+ 
+l) Valor Total Provisionado no Semestre ( campo: provisaoSemestreConsol)  
+Este campo deve conter a soma de todas as provisões (lançadas - valor positivo, 
+revertidas - valor negativo) de todos os eventos do último semestre consolidados e 
+relativos à categoria Nível 1 a que o bloco se refere.  
+ 
+m) Valor Total Recuperado Consolidado (campo: recuperacaoTotalConsol)  
+Este campo deve conter a soma de todas as recuperações de todos os eventos 
+consolidados relativos à categoria Nível 1 a que o bloco se refere.  (NR)  
+n) Valor Total Recuperado no Semestre (campo: recuperacaoSemestreConsol)  
+Este campo deve conter a soma de todas as recuperações (lançadas - valor negativo) de 
+todos os eventos do último semestre consolidados e relativos à categoria Nível 1 a que 
+o bloco se refere.  (NR)  
+ 
+8.4.  Bloco 3 - Tabela de Sistemas de Origem  
+ 
+8.4.1.  Conceituação  
+Esse bloco de informações tem por finalidade a construção de uma tabela de apoio que 
+permitirá a identificação por parte do Banco Central dos sistemas de origem dentro da 
+entidade onde os dados informados no documento 5050 estão registrados.  
+ 
+Serão informados tantos registros quantos forem os sistemas legados que deram origem às 
+informações fornecidas.  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL   
+8.4.2.  Campos da Tabela de Sistemas de Origem  
+a) Código do Sistema Legado ( campo: codigoSistema)  
+Campo alfanumérico de 10 caracteres, deve conter o código do sistema legado onde 
+está registrada a informação fornecida no Documento 5050.  
+ 
+➢ Observação: O codigoSistema atribuído deve ser único  e manter consistência ao 
+longo das diferentes datas -bases enviadas. Cabe a ES garantir a unicidade dos 
+códigos informados.  
+ 
+ 
+b) Nome do Sistema Legado ( campo: nomeSistema)  
+Deve conter obrigatoriamente o nome do sistema legado (código alfanumérico de até 
+70 caracteres) relativo ao código do campo anterior.  
+ 
+Seguem exemplos (lista não exaustiva) de identificadores de sistemas legados:  
+• Sistema Jurídico;  
+• Sistema contra fraudes no sistema de cartões de crédito;  
+• Sistema de apuração de fraude interna;  
+• Sistema de gerenciamento de Recursos Humanos.  
+ 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  8.5.  Bloco 4 - Tabela de Subtítulos de Nível Interno  
+ 
+8.5.1.   Conceituação  
+Esse bloco de informações tem por finalidade a construção de uma tabela de apoio que 
+permitirá a identificação por parte do Banco Central dos subtítulos de nível interno utilizados 
+pela entidade na contabilização dos eventos informados no documento 5050.  
+ 
+Serão informados tantos registros quantos forem os subtítulos utilizados na contabilização 
+dos eventos informados.  
+ 
+8.5.2.   Campos da Tabela de Subtítulos de Nível Interno  
+a) Código da Conta ( campo: codigoConta)  
+Campo numérico com até 24 dígitos, deve conter o código da conta de subtítulo de nível 
+interno utilizada na contabilização dos eventos informados no documento.  
+ 
+➢ Observação: O codigoConta  atribuído deve ser único e manter consistência ao longo 
+das diferentes datas -bases enviadas. Cabe a ES garantir a unicidades dos códigos de 
+conta informados.  
+ 
+ 
+b) Nome da Conta (campo: nomeConta)  
+Deve conter obrigatoriamente o nome da conta (código alfanumérico de até 70 
+caracteres) relativo ao código do campo anterior.  
+ 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  8.6.  Bloco 5 – Eventos que deixaram de ser informados no bloco “Eventos 
+Individualizados”  (NR)  
+ 
+8.6.1.   Conceituação  
+Este bloco tem como objetivo explicar o motivo pelo qual um evento, que foi incluído no 
+bloco 'Eventos Individualizados' na data -base anterior, deixou de ter sua informação de forma 
+individualizada obrigatória na atual data -base. Dessa forma, todos os even tos que foram 
+enviados no bloco 'Eventos Individualizados' na data -base imediatamente anterior e que não 
+estão sendo informados novamente no mesmo bloco na data -base atual devem ter os 
+motivos de sua não obrigatoriedade devidamente especificados neste bloc o.  
+ 
+Essa abordagem visa garantir a clareza e a consistência nas informações fornecidas, 
+permitindo uma compreensão adequada das circunstâncias que levaram à exclusão de 
+eventos anteriormente considerados obrigatórios. Além disso, possibilita uma análise precis a 
+e completa dos eventos individuais que estão sendo reportados, oferecendo uma visão 
+abrangente da situação atual.  
+ 
+8.6.2.   Campos dos Eventos Excluídos  
+a) Identificação Individual do Evento (campo: idEvento)  
+O campo idEvento deve conter o mesmo valor de quando o evento era informado de 
+forma individualizada no bloco Eventos Individualizados (item 8.2.2  a) 
+b) Data de Exclusão (campo: dataExclusao)  
+Data em que ensejou a não obrigatoriedade, pelos motivos elencados na tabela do 
+anexo 10.4 , da informação individualizada do evento.  
+O campo leva o formato AAAA -MM -DD, sendo AAAA o ano, MM o mês e DD o dia da 
+data da exclusão.  
+c) Motivo da Exclusão (campo: motivoExclusao)  
+Deve ser informado o motivo para exclusão do evento no bloco “Eventos 
+Indivualizados”.  
+ 
+O código informado deverá obrigatoriamente constar da tabela IV - Motivos de Exclusão 
+do Capítulo 10 (item 10.4 ). 
+ 
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  9. LEIAUTE XML DO DOCUMENTO 5050: (NR)  
+ 
+ 
+  
+<documento
+codigoDocumento="5050"
+dataBase="AAAA-MM" Cabeçalho
+codigoConglomerado="C[0-9]{7}" Informados uma única
+cnpj="[0-9]{8}" vez no documento
+tipoRemessa="I | S"
+opcapPorProvisaoAcumulada="N | S"
+<eventosIndividualizados>
+<evento
+idEvento="[0-9][A-Z][a-z]{40}"
+idEventoAgregador="[0-9][A-Z][a-z]{40}"
+categoriaNivel1="[1-8]{1}"
+categoriaNivel2="[11-86]{2}"
+tipoAvaliacao="I | M | IE | ME | NA"
+unidadeNegocio="[1-8]{1}"
+dataDescoberta="AAAA-MM-DD"
+dataOcorrencia="AAAA-MM-DD"
+totalPerdaEfetiva="\d{1,16}\.\d{2}"
+totalProvisao="\d{1,16}\.\d{2}"
+totalRecuperado="\d{1,16}\.\d{2}"
+valorTotalRisco="\d{1,16}\.\d{2}"
+naturezaContingencia="TRI | TRA | CIV | OUT | NA"
+codSistemaOrigem="[0-9][a-z][A-Z]{10}"
+codEventoOrigem="[0-9][a-z][A-Z]{73}"
+descricaoEvento=".{200}"
+riscoAssociado="M | C | NA"
+ligadoRiscoSocioAmbiental = "S | N" Eventos Individualizados
+ligadoRiscoCibernetico = "S | N" Ocorrem "n" vezes até
+negocioDescontinuado = "S | N" que todos os eventos
+idBacen = "(Z|z)[0-9]{7}|(I|i)[0-9]{5}" individualizados tenham
+<probabilidadesPerda> Pode ocorrer até 3 sido informados
+<probabilidadePerda vezes, uma para cada
+probabilidade="PR | PO | RE" tipo de probabilidade.
+valorRisco = "\d{1,16}\.\d{2}"/> Não deve  ser informado
+</probabilidadesPerda> se o tipo de avaliação
+<contabilizacoes> for massificado.
+<contabilizacao
+dataContabilizacao="AAAA-MM-DD"
+contaBalAnaliticoDebito="[0-9]{24}
+contaBalAnaliticoCredito="[0-9]{24} Ocorre "n" vezes até que,
+contaCosifDebito="[0-9]{8,10}" por data de Estrutura XML
+contaCosifCredito="[0-9]{8,10}" contabilização, todos os do documento
+valorPerdaEfetiva="\d{1,16}\.\d{2}" fatos contábeis relativos 5050
+valorProvisao="\d{1,16}\.\d{2}" ao evento sejam
+valorRecuperacao="\d{1,16}\.\d{2}" informados
+fonteRecuperacao="S | O | NA" />
+</contabilizacoes>
+</evento>
+</eventosIndividualizados>
+<eventosConsolidados>
+<eventoConsolidado
+categoriaNivel1Consol="[1-8]{1}"
+numEventosTotalConsol="[0-9]{18}" Eventos Consolidados
+numEventosSemestreConsol="[0-9]{18}" Pode ocorrer até 8 vezes,
+perdaEfetivaTotalConsol="\d{1,16}\.\d{2}" uma vez para cada tipo
+perdaEfetivaSemestreConsol="\d{1,16}\.\d{2}" de categoria nível 1 de
+provisaoTotalConsol="\d{1,16}\.\d{2}" Basiléia II, até que todos
+provisaoTotalCIV="\d{1,16}\.\d{2}" os eventos consolidados
+provisaoTotalTRA="\d{1,16}\.\d{2}" tenham sido informados
+provisaoTotalTRI_CONST="\d{1,16}\.\d{2}"
+provisaoTotalTRI_OUTROS="\d{1,16}\.\d{2}"
+provisaoTotalOUTROS="\d{1,16}\.\d{2}"
+provisaoSemestreConsol="\d{1,16}\.\d{2}" />
+recuperacaoTotalConsol="\d{1,16}\.\d{2}"
+recuperacaoSemestreConsol="\d{1,16}\.\d{2}"
+</eventosConsolidados>
+<sistemasOrigem> Tabelas de Sistemas de Origem
+<sistema Ocorre "n" veze até que
+codigoSistema="[0-9][A-Z][a-z]{10}" todos os sistemas legados
+nomeSistema="[0-9][A-Z][a-z]{70}" tenham sido informados.
+</sistemasOrigem>
+<contaSubtitulosInternos>
+<conta Tabela de Subtítulos Internos
+codigoConta"[0-9]{24}" Ocorre "n" vezes até que todas
+nomeConta="[0-9][A-Z][a-z]{70}" /> as contas de subtítulos internos
+</contaSubtitulosInternos> tenham sido informadas
+<eventosIndividualizadosExcluidos>
+<evento Eventos removidos de Eventos Individualizados
+idEvento="[0-9][A-Z][a-z]{40} Ocorre "n" vezes até que todos os eventos
+dataExclusao="AAAA-MM-DD" que não mais foram informados no bloco de 
+motivoExclusao="[1-6]{1}" /> Eventos Individualizados tenham o motivo da
+</eventosIndividualizadosExcluidos> saída informados.
+</documento>
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  10. ANEXOS  
+ 
+10.1.  Anexo I - Categorias Nível 1 de Basileia II  
+ 
+Código  Categoria Nível I de Basileia II  
+1 Fraudes internas  
+2 Fraudes externas  
+3 Demandas trabalhistas e segurança deficiente do local de trabalho  
+4 Práticas inadequadas relativas a clientes, produtos e serviços  
+5 Danos a ativos físicos próprios ou em uso pela instituição  
+6 Situações que acarretem a interrupção das atividades da instituição  
+7 Falhas em sistemas, processos ou infraestrutura de tecnologia da informação  
+8 Falhas na execução, no cumprimento de prazos ou no gerenciamento das atividades da 
+instituição  
+ 
+10.2.  Anexo II - Categorias Nível 2 de Basileia II  
+ 
+Código  Categoria Nível II de Basileia II  
+11 Atividade não autorizada  
+12 Roubo e fraude (origem interna)  
+21 Roubo e fraude (origem externa)  
+22 Segurança de sistemas  
+31 Relações de trabalho  
+32 Segurança do local de trabalho  
+33 Diversidade e discriminação  
+41 Adequação de produto a cliente, divulgação de informações sobre produtos e serviços, 
+desrespeito ao dever fiduciário  
+42 Práticas impróprias de negócios e em mercados  
+43 Falhas no produto  
+44 Seleção, patrocínio e exposição  
+45 Atividades de assessoramento  
+51 Desastres e outros eventos  
+61 Interrupção de atividades  
+71 Falhas em sistemas, processos ou infraestrutura de TI  
+81 Captura, execução e manutenção de transações  
+82 Monitoramento e reporte  
+83 Aquisição de clientes e documentação  
+84 Gestão de contas correntes e de não correntistas  
+85 Contrapartes em transações  
+86 Representantes e fornecedores  
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  10.3.  Anexo III - Unidades de Negócio  
+ 
+Código  Unidade de Negócio  
+1 Varejo  
+2 Comercial  
+3 Finanças corporativas  
+4 Negociação e vendas  
+5 Pagamentos e liquidações  
+6 Serviços de agente financeiro  
+7 Administração de ativos  
+8 Corretagem de varejo  
+ 
+10.4.  Anexo IV – Motivos de exclusão de Evento Individualizado  (NR)  
+ 
+Código  Motivo de Exclusão  
+1 Migração para o bloco de eventos consolidados  
+2 O valor do risco não coberto por provisão ficou inferior a R$10.000.000,00 (art. 
+6º, inciso III, da Circular nº 3.979/20)  
+3 Fora da janela temporal de 10 anos do DRO  
+4 Evento excluído, conforme autorização do Banco Central (art. 9º, da Circular nº 
+3.979/20)   
+5 Correção de informações (art. 10º, da Circular nº 3.979/20)  
+6 Agregação de eventos (evento foi incorporado a outro)  
+7 Desagregação de eventos (evento foi desmembrado em outros)  
+8 Outros  
+ 
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  10.5. Anexo V – Contabilizações  (NR)  
+ 
+Perda Efetiva  Débito  Crédito  
+Registro  • Adequada conta de Despesa operacional para registro das despesas 
+efetivas.  
+• Para os eventos cobertos por provisões, debitar a adequada conta de 
+provisão para contingências para a qual foi originalmente constituída.  • Adequada Conta patrimonial (disponibilidades, imobilizado, 
+numerário, outros)  
+Recuperação  • Adequada Conta patrimonial (ativo físico, numerário, outros).  
+ 
+• Devedores diversos no caso de sinistros garantidos por meio de seguro, 
+ou direito a reembolso (item 53 do CPC 25), previstos em cláusulas de 
+indenização em acordo de aquisição, cisão, garantia de fornecedores, 
+ou qualquer outro meio.  • Adequada conta de receita operacionais, quando houver registro de 
+perda efetiva anterior.  
+ 
+• No caso de direito a reembolso (item 53 do CPC 25), usar conta de 
+despesa de provisão se for reconhecido no mesmo período da 
+correspondente provisão (item 54 do CPC 25), e usar conta de receita 
+operacional quando o reembolso se tratar de evento de perda 
+coberto por provisão constituída em períodos anteriores.  
+* Os lançamentos contábeis incorretos devem ser estornados, realizando -se a contabilização de forma reversa àquela originalmente efetuada, a fim de corrigir o erro de maneira adequada  
+  
+ 
+Instruções de Preenchimento DRO – 5050  
+ 
+ 
+DEMONSTRATIVO DE RISCO OPERACIONAL  Provisões 
+(contingências 
+passivas):  Débito  Crédito  
+Constituição  Conta de resultado devedora a depender do campo naturezaContingencia  
+Até 31.12.2024  
+• 8.1.8.40.10 -0 
+ Após 1.1.2025  
+• CIV:    a conta deve ser 8.1.9.95.10.30 -0 
+• TRA:   a conta deve ser 8.1.9.95.10.10 -4 
+• TRI:    a conta deve ser 8.1.9.95.10.20 -7 
+• OUT: a conta deve ser 8.1.9.95.10.90 -8 ou conta patrimonial  
+  Conta patrimonial a depender do campo naturezaContingencia  
+Até 31.12.2024  
+• CIV:    a conta deve ser 4.9.9.35.30 -1 
+• TRA:    a conta deve ser 4.9.9.35.10 -5 
+• TRI:    a conta deve ser 4.9.9.35.20 -8 ou 4.9.9.35.25 -3 
+• OUT: outra conta patrimonial  
+ Após 1.1.2025  
+• CIV:           a conta deve ser 4.9.9.35.30.00 -9 
+• TRA:           a conta deve ser 4.9.9.35.10.00 -5 
+• TRI:           a conta deve ser 4.9.9.35.20.00 -2 ou 4.9.9.35.25.00 -7 
+• OUT:          outra conta patrimonial  
+Reversão:  Conta patrimonial a depender do campo naturezaContingencia  
+Até 31.12.2024  
+• CIV:    a conta deve ser 4.9.9.35.30 -1 
+• TRA:    a conta deve ser 4.9.9.35.10 -5 
+• TRI:    a conta deve ser 4.9.9.35.20 -8 ou 4.9.9.35.25 -3 
+• OUT:   demais provisões para contingências  
+ Após 1.1.2025  
+• CIV:           a conta deve ser 4.9.9.35.30.00 -9 
+• TRA:           a conta deve ser 4.9.9.35.10.00 -5 
+• TRI:           a conta deve ser 4.9.9.35.20.00 -2 ou 4.9.9.35.25.00 -7 
+• OUT:         demais provisões para contingências  Conta de resultado:  
+Até 31.12.2024  
+Se a reversão ocorrer no mesmo semestre em que foi constituída a provisão, 
+pode -se estornar a conta de despesa de provisão. Caso o ajuste se referir a de 
+período anterior, usar a conta 7.1.9.90.00 -8. 
+Após 1.1.2025  
+Se a reversão ocorrer no semestre em foi constituída a provisão, estorna -se 
+preferencialmente a subconta adequada de 8.1.9.95.10.00 -1, ou a subconta 
+adequada de 7.1.9.95.10.00 -2. 
+ 

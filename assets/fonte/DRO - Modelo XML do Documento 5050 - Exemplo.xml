@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documento 
+	codigoDocumento="5050" 
+	dataBase="2021-12" 
+	codigoConglomerado="C0099999" 
+	cnpj="99999999" 
+	tipoRemessa="I" 
+	opcaoPorProvisaoAcumulada="N">
+	<eventosIndividualizados> 
+		<evento 
+			idEvento="11111111111111111Abc1234567890" 
+			categoriaNivel1="3" 
+			categoriaNivel2="31" 
+			tipoAvaliacao="I" 
+			unidadeNegocio="1" 
+			dataDescoberta="2020-02-05" 
+			dataOcorrencia="2020-01-12" 
+			totalPerdaEfetiva="3000.00" 
+			totalProvisao="30000.00" 
+			totalRecuperado="0.00" 
+			valorTotalRisco="30000.00"
+			naturezaContingencia="TRA" 
+			codSistemaOrigem="AsBbCcDc99" 
+			codigoEventoOrigem="AsBbCcDcEeFfGgHh999998888777766665555"
+			riscoAssociado="NA" 
+			ligadoRiscoSocioAmbiental="N" 
+			ligadoRiscoCibernetico="N" 
+			idBacen="Z1234567"> 
+			<probabilidadesPerdas> 
+				<probabilidadePerda 
+					probabilidade="PR" 
+					valorRisco="20000.00"/> 
+				<probabilidadePerda 
+					probabilidade="PO" 
+					valorRisco="10000.00"/> 
+			</probabilidadesPerdas> 
+			<contabilizacoes>
+				<contabilizacao 
+					dataContabilizacao="2020-09-02" 
+					contaBalAnaliticoDebito="246813579246813579" 
+					contaBalAnaliticoCredito="246813579246813579" 
+					contaCosifDebito="10000007" 
+					contaCosifCredito="20000006"
+					valorPerdaEfetiva="3000.00" 
+					valorProvisao="0.00"
+					valorRecuperacao="0.00"/> 
+				<contabilizacao 
+					dataContabilizacao="2020-09-05" 
+					contaBalAnaliticoDebito="123456789123456789" 
+					contaBalAnaliticoCredito="123456789123456789" 
+					contaCosifDebito="10000007" 
+					contaCosifCredito="20000006"
+					valorPerdaEfetiva="0.00" 
+					valorProvisao="-20000.00"
+					valorRecuperacao="100.00"
+					fonteRecuperacao="NA"/> 
+				<contabilizacao 
+					dataContabilizacao="2020-09-05" 
+					contaBalAnaliticoDebito="246813579246813579" 
+					contaBalAnaliticoCredito="246813579246813579" 
+					contaCosifDebito="12000007" 
+					contaCosifCredito="41000008"
+					valorPerdaEfetiva="0.00" 
+					valorProvisao="-10000.00"
+					valorRecuperacao="0.00"/> 
+			</contabilizacoes>
+		</evento> 
+	</eventosIndividualizados>
+	<eventosConsolidados>
+		<eventoConsolidado
+			categoriaNivel1Consol="1"
+			numEventosTotalConsol="10" 
+			numEventosSemestreConsol="5" 
+			perdaEfetivaTotalConsol="5000.00" 
+			perdaEfetivaSemestreConsol="300.00" 
+			provisaoTotalConsol="-600.00" 
+			provisaoSemestreConsol="200.00"/> 
+	</eventosConsolidados>
+	<sistemasOrigem> 				
+		<sistema 			
+			codigoSistema="Cosif01" 		
+			nomeSistema="Sistema de Controle de Passivo Judicial"/>		
+	</sistemasOrigem> 					
+	<contasSubtitulosInternos> 				
+	  <conta 			
+		codigoConta="10000000099" 		
+		nomeConta="Honorarios e Custas"/> 	
+	  <conta 			
+		codigoConta="10000007890" 		
+		nomeConta="Constituicao de Provisao"/> 		
+	  <conta 			
+		codigoConta="200000006900" 		
+		nomeConta="Conta de Ajuste"/> 
+	</contasSubtitulosInternos>				
+
+</documento>
