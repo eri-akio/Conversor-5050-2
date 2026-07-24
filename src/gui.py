@@ -11,6 +11,7 @@ deliberada: o redimensionamento da janela fica desabilitado.
 from __future__ import annotations
 
 import queue
+import sys
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -20,6 +21,16 @@ from src.conversion import STATUS_FALHA_TECNICA as RESULTADO_FALHA_TECNICA
 from src.conversion import processar
 
 TITULO_JANELA = "Smart Reporting"
+
+# Mesmo esquema de resolucao de caminho usado em src/xml_writer.py: em
+# --onefile, os dados ficam em sys._MEIPASS; fora do bundle, __file__ aponta
+# para a arvore de codigo-fonte original.
+if getattr(sys, "frozen", False):
+    _BASE_DIR = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+else:
+    _BASE_DIR = Path(__file__).resolve().parent.parent
+
+ICONE_JANELA = _BASE_DIR / "assets" / "testeIco.ico"
 TITULO_CABECALHO = "Smart Reporting - CADOC 5050"
 
 STATUS_AGUARDANDO = "Aguardando"
@@ -390,5 +401,9 @@ class Aplicacao(ttk.Frame):
 
 def run_gui() -> None:
     raiz = tk.Tk()
+    try:
+        raiz.iconbitmap(str(ICONE_JANELA))
+    except tk.TclError:
+        pass
     Aplicacao(raiz)
     raiz.mainloop()
