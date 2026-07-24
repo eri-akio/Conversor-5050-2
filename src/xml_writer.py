@@ -22,7 +22,7 @@ if getattr(sys, "frozen", False):
 else:
     _BASE_DIR = Path(__file__).resolve().parent.parent
 
-RESOURCES_DIR = _BASE_DIR / "assets" / "schemas"
+RESOURCES_DIR = _BASE_DIR / "assets" / "fonte"
 XSD_PATH = RESOURCES_DIR / "dro_5050_2025_06.xsd"
 
 
