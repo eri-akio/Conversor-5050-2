@@ -43,10 +43,10 @@ CAMPOS_EVENTO_PADRAO = {
     "valorRecuperacao": 0,
     "contaBalAnaliticoDebito": "123456",
     "nomeContaDebito": "Conta Debito",
-    "contaCosifDebito": "12345678",
+    "contaCosifDebito": "10000007",
     "contaBalAnaliticoCredito": "654321",
     "nomeContaCredito": "Conta Credito",
-    "contaCosifCredito": "87654321",
+    "contaCosifCredito": "20000006",
 }
 
 
@@ -159,6 +159,35 @@ def test_linha_com_erro_impeditivo_reprova_e_nao_gera_xml(
     assert resultado.status_xsd == "NÃO EXECUTADO"
     assert resultado.caminho_xml is None
     assert any(o.codigo == "BASE-SINAL-CONT-001" for o in resultado.ocorrencias)
+
+
+def test_conta_cosif_fora_do_cadastro_reprova_e_nao_gera_xml(
+    tmp_path: Path,
+) -> None:
+    workbook = Workbook()
+    aba_base = workbook.active
+    aba_base.title = "Base"
+    aba_base.append(list(BASE_COLUNAS))
+    campos_invalidos = dict(CAMPOS_EVENTO_PADRAO)
+    campos_invalidos["contaCosifDebito"] = "99999999"  # fora do cadastro COSIF
+    aba_base.append(
+        [campos_invalidos.get(coluna) for coluna in BASE_COLUNAS]
+    )
+
+    aba_cabecalho = workbook.create_sheet("Cabecalho")
+    aba_cabecalho.append(list(CABECALHO_COLUNAS))
+    aba_cabecalho.append(
+        [CABECALHO_VALIDO.get(coluna) for coluna in CABECALHO_COLUNAS]
+    )
+    caminho_planilha = tmp_path / "cosif_invalido.xlsx"
+    workbook.save(caminho_planilha)
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    assert resultado.status_local == "REPROVADO"
+    assert resultado.status_xsd == "NÃO EXECUTADO"
+    assert resultado.caminho_xml is None
+    assert any(o.codigo == "DRO001431" for o in resultado.ocorrencias)
 
 
 def test_segunda_execucao_na_mesma_pasta_gera_arquivos_com_sufixo(

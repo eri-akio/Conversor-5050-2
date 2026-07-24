@@ -959,6 +959,8 @@ tratamento local será `ERRO IMPEDITIVO`.
 | `DRO001402` | conta interna de crédito deve existir no bloco de contas |
 | `DRO001411` | recuperação deve ser menor ou igual a zero |
 | `DRO001421` | recuperação efetiva a partir de 2021 exige fonte `S` ou `O` |
+| `DRO001431` | conta COSIF de débito deve existir no cadastro oficial COSIF (`assets/lista_COSIF_validas.txt`) |
+| `DRO001432` | conta COSIF de crédito deve existir no cadastro oficial COSIF (`assets/lista_COSIF_validas.txt`) |
 | `DRO001441` | conta interna de débito exige conta COSIF de débito |
 | `DRO001442` | conta interna de crédito exige conta COSIF de crédito |
 | `DRO001443` | conta COSIF de débito exige conta interna de débito (seção 13) |
@@ -966,7 +968,7 @@ tratamento local será `ERRO IMPEDITIVO`.
 | `DRO001451` | evento não exclusivamente de risco exige campos contábeis |
 | `DRO001452` | evento exclusivamente de risco não deve ter contabilização |
 
-Total: 30 críticas oficiais de pré-processamento executadas localmente.
+Total: 32 críticas oficiais de pré-processamento executadas localmente.
 
 ### Não executadas
 
@@ -974,8 +976,6 @@ Total: 30 críticas oficiais de pré-processamento executadas localmente.
 |---|---|
 | `DRO001001` | depende do UNICAD |
 | `DRO001002` | depende das bases Bacen/UNICAD |
-| `DRO001431` | depende de validade oficial da conta COSIF de débito |
-| `DRO001432` | depende de validade oficial da conta COSIF de crédito |
 
 Essas críticas não serão registradas como aprovadas ou reprovadas. O relatório
 indicará apenas que validações externas não fazem parte do escopo.

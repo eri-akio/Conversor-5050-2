@@ -116,19 +116,28 @@ preservação de zeros
 presença do par contábil
 ```
 
-A existência da conta no cadastro oficial COSIF não pode ser
-confirmada com os arquivos fornecidos.
+A existência da conta no cadastro oficial COSIF agora é verificada
+diretamente contra `assets/lista_COSIF_validas.txt` (um código por
+linha, carregado em `src.regulatory_constants.CONTAS_COSIF_VALIDAS`),
+por `validar_conta_cosif_debito`/`validar_conta_cosif_credito` em
+`src/rules_pre.py`.
 
-Quando uma conta COSIF é informada:
+Quando uma conta COSIF é informada e existe no cadastro:
 
 ```text
-REGRA NÃO EXECUTADA
+APROVADA
+```
+
+Quando uma conta COSIF é informada e não existe no cadastro:
+
+```text
+REPROVADA
 ```
 
 Quando há conta interna e falta a COSIF correspondente:
 
 ```text
-REPROVADA
+REPROVADA (DRO001441/DRO001442)
 ```
 
 Quando não há lançamento aplicável:

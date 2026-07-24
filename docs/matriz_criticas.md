@@ -114,8 +114,8 @@ Essa tradução é política de controle do projeto e deverá permanecer configu
 | `DRO001402` | `E` | Verifica, nos casos em que o campo contaBalAnaliticoCredito é informado, se a referida conta está devidamente informada no campo codigoConta do Bloco 4 - Tabela de Subtítulos de Nível Interno | `contaBalAnaliticoCredito; codigoConta` | `CONTABILIZACAO/CONTA_INTERNA` | `LOCAL` | Nenhuma | `EXECUTADA` | `validar_referencia_conta_credito` | `jun/21` |
 | `DRO001411` | `E` | Verifica se o valorRecuperacao é menor ou igual a zero. Por convenção, valores de recuperação devem ser lançados com sinal negativo. | `valorRecuperacao` | `CONTABILIZACAO` | `LOCAL` | Nenhuma | `EXECUTADA` | `validar_sinal_valor_recuperacao` | `jun/21` |
 | `DRO001421` | `E` | Verifica, quando a data de ocorrência for maior ou igual a 1.1.2021, se o campo fonteRecuperacao foi devidamene informado quando há lançamento referente a valor recuperado. | `dataOcorrencia; valorRecuperacao; fonteRecuperacao` | `CONTABILIZACAO` | `LOCAL` | Nenhuma | `EXECUTADA` | `validar_fonte_recuperacao` | `jun/21` |
-| `DRO001431` | `E` | Verifica, nos casos em que sejam devidos lançamentos no campo contaCosifDebito , se foi informada uma conta Cosif válida | `contaCosifDebito` | `CONTABILIZACAO` | `PARCIAL` | Cadastro COSIF | `PARCIAL` + possível `REGRA NÃO EXECUTADA` | `validar_conta_cosif_debito` | `jun/21` |
-| `DRO001432` | `E` | Verifica, nos casos em que sejam devidos lançamentos no campo contaCosifCredito , se foi informada uma conta Cosif válida. | `contaCosifCredito` | `CONTABILIZACAO` | `PARCIAL` | Cadastro COSIF | `PARCIAL` + possível `REGRA NÃO EXECUTADA` | `validar_conta_cosif_credito` | `jun/21` |
+| `DRO001431` | `E` | Verifica, nos casos em que sejam devidos lançamentos no campo contaCosifDebito , se foi informada uma conta Cosif válida | `contaCosifDebito` | `CONTABILIZACAO` | `LOCAL` | Nenhuma (cadastro em `assets/lista_COSIF_validas.txt`) | `EXECUTADA` | `validar_conta_cosif_debito` | `jun/21` |
+| `DRO001432` | `E` | Verifica, nos casos em que sejam devidos lançamentos no campo contaCosifCredito , se foi informada uma conta Cosif válida. | `contaCosifCredito` | `CONTABILIZACAO` | `LOCAL` | Nenhuma (cadastro em `assets/lista_COSIF_validas.txt`) | `EXECUTADA` | `validar_conta_cosif_credito` | `jun/21` |
 | `DRO001441` | `E` | Verifica, nos casos em que o campo contaBalAnaliticoDebito é informado, se há informação preenchida no campo contaCosifDebito correspondente . | `contaBalAnaliticoDebito; contaCosifDebito` | `CONTABILIZACAO` | `LOCAL` | Nenhuma | `EXECUTADA` | `validar_par_debito_interno_cosif` | `jun/21` |
 | `DRO001442` | `E` | Verifica, nos casos em que o campo contaBalAnaliticoCredito é informado, se há informação preenchida no campo contaCosifCredito correspondente . | `contaBalAnaliticoCredito; contaCosifCredito` | `CONTABILIZACAO` | `LOCAL` | Nenhuma | `EXECUTADA` | `validar_par_credito_interno_cosif` | `jun/21` |
 | `DRO001443` | `E` | Verifica, nos casos em que sejam devidos lançamentos no campo contaCosifDebito , se há preenchimento do campo contaBalAnaliticoDebito correspondente. | `contaCosifDebito; contaBalAnaliticoDebito` | `CONTABILIZACAO` | `PARCIAL` | Regra de exigência COSIF | `PARCIAL` + possível `REGRA NÃO EXECUTADA` | `validar_contraparte_interna_debito` | `jun/21` |
@@ -458,9 +458,10 @@ Permanecem como `REGRA NÃO EXECUTADA` na planilha de testes:
 DRO001001 — UNICAD
 DRO001002 — UNICAD/Bacen
 DRO001241 — conflito CONF-022
-DRO001431 — cadastro oficial COSIF
-DRO001432 — cadastro oficial COSIF
 ```
+
+`DRO001431`/`DRO001432` deixaram de depender de fonte externa: passam a
+ser executadas localmente contra `assets/lista_COSIF_validas.txt`.
 
 Nenhuma dessas regras é registrada como aprovada.
 

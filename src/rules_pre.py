@@ -22,6 +22,7 @@ from src.models import (
     TIPO_ERRO_IMPEDITIVO,
 )
 from src.regulatory_constants import (
+    CONTAS_COSIF_VALIDAS,
     DATA_INICIO_2021,
     LIMIAR_INDIVIDUALIZACAO,
     LIMIAR_RISCO_NAO_COBERTO,
@@ -509,6 +510,50 @@ def validar_cosif_obrigatorio(evento: EventoAgrupado) -> list[Ocorrencia]:
     return ocorrencias
 
 
+def validar_conta_cosif_debito(evento: EventoAgrupado) -> list[Ocorrencia]:
+    """DRO001431: a conta COSIF de debito informada deve existir no
+    cadastro oficial COSIF (src.regulatory_constants.CONTAS_COSIF_VALIDAS)."""
+
+    ocorrencias: list[Ocorrencia] = []
+    for contabilizacao in evento.contabilizacoes:
+        if (
+            contabilizacao.conta_cosif_debito is not None
+            and str(contabilizacao.conta_cosif_debito) not in CONTAS_COSIF_VALIDAS
+        ):
+            ocorrencias.append(
+                _erro(
+                    evento,
+                    "DRO001431",
+                    "Conta COSIF de débito deve existir no cadastro oficial COSIF.",
+                    f"contaCosifDebito={contabilizacao.conta_cosif_debito!r} não encontrada no cadastro COSIF.",
+                    ("contaCosifDebito",),
+                )
+            )
+    return ocorrencias
+
+
+def validar_conta_cosif_credito(evento: EventoAgrupado) -> list[Ocorrencia]:
+    """DRO001432: a conta COSIF de credito informada deve existir no
+    cadastro oficial COSIF (src.regulatory_constants.CONTAS_COSIF_VALIDAS)."""
+
+    ocorrencias: list[Ocorrencia] = []
+    for contabilizacao in evento.contabilizacoes:
+        if (
+            contabilizacao.conta_cosif_credito is not None
+            and str(contabilizacao.conta_cosif_credito) not in CONTAS_COSIF_VALIDAS
+        ):
+            ocorrencias.append(
+                _erro(
+                    evento,
+                    "DRO001432",
+                    "Conta COSIF de crédito deve existir no cadastro oficial COSIF.",
+                    f"contaCosifCredito={contabilizacao.conta_cosif_credito!r} não encontrada no cadastro COSIF.",
+                    ("contaCosifCredito",),
+                )
+            )
+    return ocorrencias
+
+
 # ---------------------------------------------------------------------------
 # Secao 12 - evento exclusivamente de risco vs. evento com movimento contabil
 # ---------------------------------------------------------------------------
@@ -696,6 +741,8 @@ REGRAS_UM_RESULTADO = (
 REGRAS_VARIOS_RESULTADOS = (
     validar_cosif_obrigatorio,
     validar_campos_contabeis_quando_ha_movimento,
+    validar_conta_cosif_debito,
+    validar_conta_cosif_credito,
 )
 
 

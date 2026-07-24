@@ -5,7 +5,11 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets/schemas', 'assets/schemas'), ('assets/testeIco.ico', 'assets')],
+    datas=[
+        ('assets/schemas', 'assets/schemas'),
+        ('assets/testeIco.ico', 'assets'),
+        ('assets/lista_COSIF_validas.txt', 'assets'),
+    ],
     hiddenimports=['src'],
     hookspath=[],
     hooksconfig={},

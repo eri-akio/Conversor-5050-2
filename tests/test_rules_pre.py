@@ -25,6 +25,8 @@ from src.rules_pre import (
     validar_cabecalho,
     validar_campos_contabeis_quando_ha_movimento,
     validar_composicao_risco_total,
+    validar_conta_cosif_credito,
+    validar_conta_cosif_debito,
     validar_contas_referenciadas,
     validar_cosif_obrigatorio,
     validar_descoberta_obrigatoria,
@@ -386,6 +388,100 @@ def test_conta_debito_sem_cosif_gera_dro001441() -> None:
     ocorrencias = validar_cosif_obrigatorio(evento)
 
     assert any(o.codigo == "DRO001441" for o in ocorrencias)
+
+
+def test_conta_cosif_debito_no_cadastro_nao_gera_ocorrencia() -> None:
+    linhas = [
+        _linha(
+            2,
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=0,
+            valorRecuperacao=0,
+            contaBalAnaliticoDebito="123",
+            nomeContaDebito="Conta A",
+            contaCosifDebito="10000007",
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert validar_conta_cosif_debito(evento) == []
+
+
+def test_conta_cosif_debito_fora_do_cadastro_gera_dro001431() -> None:
+    linhas = [
+        _linha(
+            2,
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=0,
+            valorRecuperacao=0,
+            contaBalAnaliticoDebito="123",
+            nomeContaDebito="Conta A",
+            contaCosifDebito="99999999",
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    ocorrencias = validar_conta_cosif_debito(evento)
+
+    assert any(o.codigo == "DRO001431" for o in ocorrencias)
+
+
+def test_conta_cosif_debito_ausente_nao_gera_ocorrencia() -> None:
+    linhas = [
+        _linha(
+            2,
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=0,
+            valorRecuperacao=0,
+            contaBalAnaliticoDebito=None,
+            nomeContaDebito=None,
+            contaCosifDebito=None,
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert validar_conta_cosif_debito(evento) == []
+
+
+def test_conta_cosif_credito_no_cadastro_nao_gera_ocorrencia() -> None:
+    linhas = [
+        _linha(
+            2,
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=0,
+            valorRecuperacao=0,
+            contaBalAnaliticoCredito="456",
+            nomeContaCredito="Conta B",
+            contaCosifCredito="20000006",
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert validar_conta_cosif_credito(evento) == []
+
+
+def test_conta_cosif_credito_fora_do_cadastro_gera_dro001432() -> None:
+    linhas = [
+        _linha(
+            2,
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=0,
+            valorRecuperacao=0,
+            contaBalAnaliticoCredito="456",
+            nomeContaCredito="Conta B",
+            contaCosifCredito="99999998",
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    ocorrencias = validar_conta_cosif_credito(evento)
+
+    assert any(o.codigo == "DRO001432" for o in ocorrencias)
 
 
 def test_evento_apenas_risco_com_contabilizacao_gera_dro001452() -> None:
