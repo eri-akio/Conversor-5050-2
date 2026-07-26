@@ -24,6 +24,7 @@ from src.rules_pre import (
     classificar_evento,
     validar_cabecalho,
     validar_campos_contabeis_quando_ha_movimento,
+    validar_codigo_conglomerado_unicad,
     validar_composicao_risco_total,
     validar_conta_cosif_credito,
     validar_conta_cosif_debito,
@@ -795,6 +796,36 @@ def test_validar_cabecalho_conglomerado_fora_do_padrao() -> None:
     ocorrencias = validar_cabecalho(_cabecalho(codigoConglomerado="X0099999"))
     assert len(ocorrencias) == 1
     assert ocorrencias[0].codigo == "BASE-CAB-CONGLOMERADO-001"
+
+
+def test_validar_codigo_conglomerado_unicad_presente_no_cadastro() -> None:
+    assert validar_codigo_conglomerado_unicad(_cabecalho()) is None
+
+
+def test_validar_codigo_conglomerado_unicad_ausente_do_cadastro() -> None:
+    ocorrencia = validar_codigo_conglomerado_unicad(
+        _cabecalho(codigoConglomerado="C0000001")
+    )
+    assert ocorrencia is not None
+    assert ocorrencia.codigo == "DRO001001"
+
+
+def test_validar_codigo_conglomerado_unicad_nao_duplica_erro_de_formato() -> (
+    None
+):
+    """Quando o formato ja esta invalido, BASE-CAB-CONGLOMERADO-001 ja cobre
+    o problema; DRO001001 nao deve gerar uma segunda ocorrencia."""
+    ocorrencia = validar_codigo_conglomerado_unicad(
+        _cabecalho(codigoConglomerado="X0099999")
+    )
+    assert ocorrencia is None
+
+
+def test_validar_codigo_conglomerado_unicad_campo_ausente() -> None:
+    ocorrencia = validar_codigo_conglomerado_unicad(
+        _cabecalho(codigoConglomerado=None)
+    )
+    assert ocorrencia is None
 
 
 def test_validar_cabecalho_cnpj_invalido() -> None:

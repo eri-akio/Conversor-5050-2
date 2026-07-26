@@ -88,7 +88,7 @@ Essa tradução é política de controle do projeto e deverá permanecer configu
 
 | criticaID | Tipo | Descrição oficial | Campos principais | Escopo | Classe | Dependência | Resultado sem dependência | Função Python proposta | Vigência |
 |---|---|---|---|---|---|---|---|---|---|
-| `DRO001001` | `E` | Verifica se o código do conglomerado prudencial existe no Unicad. | `codigoConglomerado` | `DOCUMENTO` | `EXTERNA` | UNICAD | `REGRA NÃO EXECUTADA` | `validar_codigo_conglomerado_unicad` | `jun/21` |
+| `DRO001001` | `E` | Verifica se o código do conglomerado prudencial existe no Unicad. | `codigoConglomerado` | `DOCUMENTO` | `EXTERNA` | UNICAD | `EXECUTADA (snapshot local em assets/lista_codigos_conglomerados.txt)` | `validar_codigo_conglomerado_unicad` | `jun/21` |
 | `DRO001002` | `E` | Verifica se o idBacen (ou idInstal - para os casos de agências localizadas no exterior ) existe nas bases de dados do Bacen. | `idBacen; idInstal` | `EVENTO` | `EXTERNA` | UNICAD/Bacen | `REGRA NÃO EXECUTADA` | `validar_id_bacen_unicad` | `jun/21` |
 | `DRO001101` | `E` | Verifica unicidade do campo codigoConta no Bloco 4 - Tabela de Subtítulos de Nível Interno. | `codigoConta` | `CONTA_INTERNA` | `LOCAL` | Nenhuma | `EXECUTADA` | `validar_unicidade_codigo_conta` | `jun/21` |
 | `DRO001102` | `E` | Verifica unicidade do campo codigoSistema no Bloco 3 - Tabela de Sistemas de Origem. | `codigoSistema` | `SISTEMA_ORIGEM` | `LOCAL` | Nenhuma | `EXECUTADA` | `validar_unicidade_codigo_sistema` | `jun/21` |

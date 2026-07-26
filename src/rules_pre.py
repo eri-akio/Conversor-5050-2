@@ -22,6 +22,7 @@ from src.models import (
     TIPO_ERRO_IMPEDITIVO,
 )
 from src.regulatory_constants import (
+    CODIGOS_CONGLOMERADOS_VALIDOS,
     CONTAS_COSIF_VALIDAS,
     DATA_INICIO_2021,
     LIMIAR_INDIVIDUALIZACAO,
@@ -971,6 +972,33 @@ def validar_cabecalho(
         )
 
     return ocorrencias
+
+
+def validar_codigo_conglomerado_unicad(
+    cabecalho: dict[str, CampoNormalizado],
+) -> Ocorrencia | None:
+    """DRO001001: verifica se o codigo do conglomerado prudencial informado
+    existe no cadastro local do UNICAD
+    (src.regulatory_constants.CODIGOS_CONGLOMERADOS_VALIDOS).
+
+    So executa quando codigoConglomerado ja passou pelas checagens de
+    ausencia/invalidez/formato em validar_cabecalho, para nao duplicar ou
+    mascarar o motivo ja reportado por BASE-CAB-CONGLOMERADO-001."""
+
+    campo = cabecalho["codigoConglomerado"]
+    if campo.ausente or campo.invalido:
+        return None
+    valor = str(campo.valor)
+    if not _PADRAO_CONGLOMERADO.fullmatch(valor):
+        return None
+    if valor in CODIGOS_CONGLOMERADOS_VALIDOS:
+        return None
+    return _erro_cabecalho(
+        "DRO001001",
+        "Código do conglomerado prudencial não encontrado no cadastro UNICAD.",
+        f"codigoConglomerado={valor!r} não encontrado no cadastro local do UNICAD.",
+        ("codigoConglomerado",),
+    )
 
 
 def cabecalho_tem_data_base_valida(

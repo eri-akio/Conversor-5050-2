@@ -935,6 +935,7 @@ tratamento local será `ERRO IMPEDITIVO`.
 
 | Código | Condição resumida |
 |---|---|
+| `DRO001001` | `codigoConglomerado` deve existir no snapshot local do UNICAD (`assets/lista_codigos_conglomerados.txt`) |
 | `DRO001101` | `codigoConta` deve ser único no bloco de contas internas |
 | `DRO001102` | `codigoSistema` deve ser único no bloco de sistemas |
 | `DRO001103` | deve existir apenas um evento XML final por `idEvento` |
@@ -968,17 +969,20 @@ tratamento local será `ERRO IMPEDITIVO`.
 | `DRO001451` | evento não exclusivamente de risco exige campos contábeis |
 | `DRO001452` | evento exclusivamente de risco não deve ter contabilização |
 
-Total: 32 críticas oficiais de pré-processamento executadas localmente.
+Total: 33 críticas oficiais de pré-processamento executadas localmente.
 
 ### Não executadas
 
 | Código | Motivo |
 |---|---|
-| `DRO001001` | depende do UNICAD |
 | `DRO001002` | depende das bases Bacen/UNICAD |
 
-Essas críticas não serão registradas como aprovadas ou reprovadas. O relatório
-indicará apenas que validações externas não fazem parte do escopo.
+Essa crítica não será registrada como aprovada ou reprovada. O relatório
+indicará apenas que a validação externa não faz parte do escopo.
+
+`DRO001001` deixou de fazer parte desta lista: passou a ser executada
+contra um snapshot local do cadastro UNICAD (não uma consulta em tempo
+real), ver seção "Executadas localmente" acima.
 
 ## 18. Críticas oficiais de pós-processamento
 

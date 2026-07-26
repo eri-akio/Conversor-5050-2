@@ -69,7 +69,7 @@ Essa precedência não significa que uma exigência das instruções possa ser d
 | `CONF-014` | INFORMATIVO | Modelo PDF usa expressões diferentes das restrições reais do XSD | AVISO DOCUMENTAL | TRATAMENTO DEFINIDO |
 | `CONF-015` | METADADO | Comentário interno do XSD 06/2025 permanece com dados de 2021 | AVISO DOCUMENTAL | ABERTO |
 | `CONF-016` | REGRA_NEGOCIO | Unicidade de `idEvento` removida do XSD 06/2025 | AVISO TÉCNICO | TRATAMENTO DEFINIDO |
-| `CONF-017` | DEPENDENCIA_EXTERNA | Validação UNICAD não executável localmente | REGRA NÃO EXECUTADA | ABERTO |
+| `CONF-017` | DEPENDENCIA_EXTERNA | Validação UNICAD não executável localmente | `DRO001001` EXECUTADA (snapshot local); `DRO001002` REGRA NÃO EXECUTADA | PARCIALMENTE TRATADO |
 | `CONF-018` | DEPENDENCIA_EXTERNA | Validação da existência/adequação COSIF | REGRA NÃO EXECUTADA ou PARCIAL | ABERTO |
 | `CONF-019` | DEPENDENCIA_EXTERNA | Críticas históricas sem data-base anterior | REGRA NÃO EXECUTADA | ABERTO |
 | `CONF-020` | ESTRUTURAL / DADOS | Bloco consolidado obrigatório sem aba própria | ERRO IMPEDITIVO se os dados forem insuficientes | ABERTO |
@@ -687,11 +687,11 @@ DRO001002 — idBacen ou idInstal
 
 ### Problema
 
-O conversor local não possui acesso garantido ao UNICAD.
+O conversor local não possui acesso garantido (em tempo real) ao UNICAD.
 
-### Decisão
+### Decisão — `DRO001002` (idBacen / idInstal)
 
-Sem integração ou base de referência:
+Sem integração ou base de referência local disponível:
 
 ```text
 status = REGRA NÃO EXECUTADA
@@ -701,6 +701,23 @@ motivo = Base UNICAD indisponível
 O sistema poderá validar somente formato e presença.
 
 Nunca deverá declarar que o código existe oficialmente apenas porque possui formato correto.
+
+### Decisão — `DRO001001` (código do conglomerado)
+
+Um snapshot local do cadastro UNICAD passou a ser distribuído junto ao
+conversor (`assets/lista_codigos_conglomerados.txt`, carregado por
+`src.regulatory_constants.CODIGOS_CONGLOMERADOS_VALIDOS`). Com isso:
+
+```text
+status = EXECUTADA (contra o snapshot local, nao contra o UNICAD em tempo real)
+função = validar_codigo_conglomerado_unicad (src/rules_pre.py)
+```
+
+Isso não é uma consulta online ao UNICAD — é uma comparação contra uma
+cópia estática, que pode ficar desatualizada se o cadastro oficial mudar
+sem que o arquivo local seja atualizado. A checagem de formato/presença
+(`BASE-CAB-CONGLOMERADO-001`) continua sendo aplicada antes, e um erro de
+formato não gera adicionalmente `DRO001001` (evita duplicidade).
 
 ---
 

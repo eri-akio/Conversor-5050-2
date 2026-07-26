@@ -42,6 +42,7 @@ from src.rules_pre import (
     cabecalho_tem_data_base_valida,
     classificar_evento,
     validar_cabecalho,
+    validar_codigo_conglomerado_unicad,
     validar_contas_referenciadas,
     validar_evento,
     validar_sistema_referenciado,
@@ -150,6 +151,9 @@ def processar(
     ocorrencias: list[Ocorrencia] = []
 
     ocorrencias.extend(validar_cabecalho(cabecalho))
+    resultado_unicad = validar_codigo_conglomerado_unicad(cabecalho)
+    if resultado_unicad is not None:
+        ocorrencias.append(resultado_unicad)
     data_base_valida = cabecalho_tem_data_base_valida(cabecalho)
     data_base = cabecalho["dataBase"].valor if data_base_valida else None
 

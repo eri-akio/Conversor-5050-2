@@ -86,11 +86,17 @@ consolidada como aprovada.
 
 ### `DRO001001`
 
-Consulta ao UNICAD para confirmar o código do conglomerado:
+Confirma o código do conglomerado contra um snapshot local do cadastro
+UNICAD (`assets/lista_codigos_conglomerados.txt`, função
+`validar_codigo_conglomerado_unicad` em `src/rules_pre.py`):
 
 ```text
-REGRA NÃO EXECUTADA
+EXECUTADA (contra snapshot local, nao contra o UNICAD em tempo real)
 ```
+
+O snapshot pode ficar desatualizado em relação ao cadastro oficial; o
+formato local do identificador (`^C[0-9]{7}$`) continua sendo validado
+separadamente antes desta checagem.
 
 ### `DRO001002`
 

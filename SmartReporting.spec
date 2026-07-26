@@ -9,6 +9,7 @@ a = Analysis(
         ('assets/schemas', 'assets/schemas'),
         ('assets/testeIco.ico', 'assets'),
         ('assets/lista_COSIF_validas.txt', 'assets'),
+        ('assets/lista_codigos_conglomerados.txt', 'assets'),
     ],
     hiddenimports=['src'],
     hookspath=[],

@@ -22,6 +22,7 @@ else:
     _BASE_DIR = Path(__file__).resolve().parent.parent
 
 _CAMINHO_COSIF = _BASE_DIR / "assets" / "lista_COSIF_validas.txt"
+_CAMINHO_CONGLOMERADOS = _BASE_DIR / "assets" / "lista_codigos_conglomerados.txt"
 
 
 def _carregar_contas_cosif_validas() -> frozenset[str]:
@@ -29,4 +30,10 @@ def _carregar_contas_cosif_validas() -> frozenset[str]:
     return frozenset(linha.strip() for linha in linhas if linha.strip())
 
 
+def _carregar_codigos_conglomerados_validos() -> frozenset[str]:
+    linhas = _CAMINHO_CONGLOMERADOS.read_text(encoding="utf-8").splitlines()
+    return frozenset(linha.strip() for linha in linhas if linha.strip())
+
+
 CONTAS_COSIF_VALIDAS: frozenset[str] = _carregar_contas_cosif_validas()
+CODIGOS_CONGLOMERADOS_VALIDOS: frozenset[str] = _carregar_codigos_conglomerados_validos()

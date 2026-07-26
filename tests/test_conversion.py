@@ -15,7 +15,7 @@ from src.reader import BASE_COLUNAS, CABECALHO_COLUNAS
 CABECALHO_VALIDO = {
     "codigoDocumento": "5050",
     "dataBase": "2025-06",
-    "codigoConglomerado": "C1234567",
+    "codigoConglomerado": "C0099999",
     "cnpj": "12345678",
     "tipoRemessa": "I",
     "opcaoPorProvisaoAcumulada": "S",
