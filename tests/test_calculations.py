@@ -11,6 +11,7 @@ import pytest
 from src.calculations import (
     agrupar_linhas_por_evento,
     detectar_colisoes_id_evento,
+    extrair_probabilidades,
     montar_evento,
     normalizar_linha_base,
     validar_sistemas_e_contas,
@@ -157,6 +158,53 @@ def test_normalizar_linha_base_remove_pontos_e_hifens_das_contas() -> None:
 
     assert linha.valor("contaBalAnaliticoCredito") == "81999006"
     assert linha.valor("contaCosifCredito") == "8199006"
+
+
+@pytest.mark.parametrize(
+    ("campo", "valor", "esperado"),
+    [
+        ("tipoAvaliacao", "m", "M"),
+        ("naturezaContingencia", "tri", "TRI"),
+        ("riscoAssociado", "na", "NA"),
+        ("ligadoRiscoSocioAmbiental", "s", "S"),
+        ("ligadoRiscoCibernetico", "n", "N"),
+        ("negocioDescontinuado", "n", "N"),
+        ("fonteRecuperacao", "o", "O"),
+    ],
+)
+def test_normalizar_linha_base_maiusculiza_campos_de_dominio_fechado(
+    campo: str, valor: str, esperado: str
+) -> None:
+    linha = _linha(2, **{campo: valor})
+
+    assert linha.valor(campo) == esperado
+
+
+def test_normalizar_linha_base_maiusculiza_probabilidade_rotulada() -> None:
+    linha = _linha(2, probabilidadePerda="pr - provável", valorRisco=100)
+
+    assert linha.valor("probabilidadePerda") == "PR"
+
+
+@pytest.mark.parametrize(
+    ("campo", "valor"),
+    [
+        ("idEvento", "EventoAbc01"),
+        ("codSistemaOrigem", "SisOrigem01"),
+    ],
+)
+def test_normalizar_linha_base_preserva_caixa_de_campos_de_identidade(
+    campo: str, valor: str
+) -> None:
+    linha = _linha(2, **{campo: valor})
+
+    assert linha.valor(campo) == valor
+
+
+def test_normalizar_linha_base_id_bacen_rotulado_preserva_caixa() -> None:
+    linha = _linha(2, idBacen="z1234567 - Banco Teste")
+
+    assert linha.valor("idBacen") == "z1234567"
 
 
 def test_conflito_entre_linhas_gera_base_agr_001() -> None:
@@ -631,3 +679,158 @@ def test_sistemas_e_contas_consistentes_nao_geram_ocorrencia() -> None:
     ocorrencias = validar_sistemas_e_contas(linhas)
 
     assert ocorrencias == []
+
+
+# ---------------------------------------------------------------------------
+# Formato/dominio: BASE-*-FORM-001 (sistemas/contas, probabilidade,
+# fonteRecuperacao)
+# ---------------------------------------------------------------------------
+
+
+def test_codigo_sistema_malformado_gera_uma_unica_ocorrencia_para_varias_linhas() -> (
+    None
+):
+    linhas = [
+        _linha(2, idEvento="EVT-1", codSistemaOrigem="SISTEMA_INVALIDO_123"),
+        _linha(3, idEvento="EVT-2", codSistemaOrigem="SISTEMA_INVALIDO_123"),
+        _linha(4, idEvento="EVT-3", codSistemaOrigem="SISTEMA_INVALIDO_123"),
+    ]
+
+    ocorrencias = validar_sistemas_e_contas(linhas)
+
+    ocorrencias_formato = [
+        o for o in ocorrencias if o.codigo == "BASE-SISTEMA-FORM-001"
+    ]
+    assert len(ocorrencias_formato) == 1
+    assert ocorrencias_formato[0].linhas == (2, 3, 4)
+
+
+def test_nomes_com_espacos_diferentes_nao_geram_conflito() -> None:
+    linhas = [
+        _linha(2, idEvento="EVT-1", codSistemaOrigem="SIS1", nomeSistema="Sistema de Risco"),
+        _linha(3, idEvento="EVT-2", codSistemaOrigem="SIS1", nomeSistema="Sistema   de   Risco"),
+    ]
+
+    ocorrencias = validar_sistemas_e_contas(linhas)
+
+    assert not any(o.codigo == "BASE-SIS-001" for o in ocorrencias)
+
+
+def test_codigo_sistema_malformado_independe_do_nome_estar_presente() -> None:
+    linhas = [
+        _linha(
+            2,
+            idEvento="EVT-1",
+            codSistemaOrigem="SISTEMA_INVALIDO_123",
+            nomeSistema=None,
+        )
+    ]
+
+    ocorrencias = validar_sistemas_e_contas(linhas)
+
+    assert any(o.codigo == "BASE-SISTEMA-FORM-001" for o in ocorrencias)
+
+
+def test_nome_sistema_com_espaco_nao_separavel_no_meio_gera_ocorrencia() -> None:
+    linhas = [
+        _linha(2, nomeSistema="Sistema de Risco"),
+    ]
+
+    ocorrencias = validar_sistemas_e_contas(linhas)
+
+    assert any(o.codigo == "BASE-NOMESISTEMA-FORM-001" for o in ocorrencias)
+
+
+def test_conta_bal_analitico_malformada_aponta_campo_de_origem() -> None:
+    linhas = [
+        _linha(2, idEvento="EVT-1", contaBalAnaliticoDebito="ABC123"),
+        _linha(3, idEvento="EVT-2", contaBalAnaliticoCredito="XYZ789"),
+    ]
+
+    ocorrencias = validar_sistemas_e_contas(linhas)
+    ocorrencias_formato = {
+        o.campos: o for o in ocorrencias if o.codigo == "BASE-CONTABAL-FORM-001"
+    }
+
+    assert ("contaBalAnaliticoDebito",) in ocorrencias_formato
+    assert ("contaBalAnaliticoCredito",) in ocorrencias_formato
+
+
+def test_nome_conta_malformado_aponta_campo_de_origem() -> None:
+    linhas = [
+        _linha(2, idEvento="EVT-1", nomeContaDebito="Conta_com_erro"),
+        _linha(3, idEvento="EVT-2", nomeContaCredito="Conta#Credito"),
+    ]
+
+    ocorrencias = validar_sistemas_e_contas(linhas)
+    ocorrencias_formato = {
+        o.campos: o for o in ocorrencias if o.codigo == "BASE-NOMECONTA-FORM-001"
+    }
+
+    assert ("nomeContaDebito",) in ocorrencias_formato
+    assert ("nomeContaCredito",) in ocorrencias_formato
+
+
+def test_probabilidade_fora_do_dominio_gera_ocorrencia_e_nao_entra_na_tupla() -> (
+    None
+):
+    linhas = [_linha(2, probabilidadePerda="XX", valorRisco=100)]
+
+    probabilidades, ocorrencias = extrair_probabilidades(linhas)
+
+    assert probabilidades == ()
+    assert len(ocorrencias) == 1
+    assert ocorrencias[0].codigo == "BASE-PROBABILIDADE-FORM-001"
+
+
+def test_probabilidade_fora_do_dominio_sem_valor_risco_nao_gera_base_prob_001() -> (
+    None
+):
+    linhas = [_linha(2, probabilidadePerda="XX", valorRisco=None)]
+
+    _, ocorrencias = extrair_probabilidades(linhas)
+
+    assert len(ocorrencias) == 1
+    assert ocorrencias[0].codigo == "BASE-PROBABILIDADE-FORM-001"
+
+
+def test_fonte_recuperacao_fora_do_dominio_pode_sobrepor_dro001421() -> None:
+    """Politica aceita e documentada: quando valorRecuperacao < 0, o
+    dominio invalido de fonteRecuperacao tambem dispara DRO001421 (o
+    proprio DRO001421 ja rejeita qualquer fonte fora de S/O) — sobreposicao
+    menor, nao resolvida por engenharia extra."""
+    linhas = [
+        _linha(
+            2,
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=100,
+            valorProvisao=0,
+            valorRecuperacao=-50,
+            fonteRecuperacao="XX",
+        )
+    ]
+
+    _, ocorrencias = montar_evento("EVT-1", linhas)
+
+    codigos = {o.codigo for o in ocorrencias}
+    assert "BASE-FONTERECUPERACAO-FORM-001" in codigos
+    assert "DRO001421" in codigos
+
+
+def test_fonte_recuperacao_fora_do_dominio_com_data_ausente_gera_os_dois() -> None:
+    linhas = [
+        _linha(
+            2,
+            dataContabilizacao=None,
+            valorPerdaEfetiva=100,
+            valorProvisao=0,
+            valorRecuperacao=0,
+            fonteRecuperacao="XX",
+        )
+    ]
+
+    _, ocorrencias = montar_evento("EVT-1", linhas)
+
+    codigos = {o.codigo for o in ocorrencias}
+    assert "BASE-FONTERECUPERACAO-FORM-001" in codigos
+    assert "BASE-CONT-OBR-001" in codigos

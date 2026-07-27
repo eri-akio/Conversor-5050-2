@@ -83,6 +83,29 @@ def _construir_planilha_valida(tmp_path: Path) -> Path:
     return caminho
 
 
+def _construir_planilha_com_evento(tmp_path: Path, **sobrescritas: object) -> Path:
+    """Planilha com um unico evento na aba Base, para cenarios REPROVADO
+    (nao precisa de segundo evento consolidavel — XML nao chega a ser
+    construido quando status_local != APROVADO)."""
+
+    workbook = Workbook()
+    aba_base = workbook.active
+    aba_base.title = "Base"
+    aba_base.append(list(BASE_COLUNAS))
+    campos = dict(CAMPOS_EVENTO_PADRAO)
+    campos.update(sobrescritas)
+    aba_base.append([campos.get(coluna) for coluna in BASE_COLUNAS])
+
+    aba_cabecalho = workbook.create_sheet("Cabecalho")
+    aba_cabecalho.append(list(CABECALHO_COLUNAS))
+    aba_cabecalho.append(
+        [CABECALHO_VALIDO.get(coluna) for coluna in CABECALHO_COLUNAS]
+    )
+    caminho_planilha = tmp_path / "planilha.xlsx"
+    workbook.save(caminho_planilha)
+    return caminho_planilha
+
+
 def test_planilha_valida_produz_xml_aprovado_e_relatorio(
     tmp_path: Path,
 ) -> None:
@@ -324,3 +347,161 @@ def test_xsd_indisponivel_nao_derruba_o_processo(
     assert resultado.caminho_relatorio is not None
     assert resultado.caminho_relatorio.exists()
     assert any(o.codigo == "XSD-TEC-001" for o in resultado.ocorrencias)
+
+
+# ---------------------------------------------------------------------------
+# Formato/dominio ponta a ponta (validar_formatos_e_dominios_evento +
+# curto-circuito de conversion.py)
+# ---------------------------------------------------------------------------
+
+
+def test_categoria_nivel2_fora_do_dominio_e_pega_localmente_antes_do_xsd(
+    tmp_path: Path,
+) -> None:
+    caminho_planilha = _construir_planilha_com_evento(
+        tmp_path, categoriaNivel2="19"
+    )
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    assert resultado.status_local == "REPROVADO"
+    assert resultado.status_xsd == "NÃO EXECUTADO"
+    assert resultado.caminho_xml is None
+    assert any(
+        o.codigo == "BASE-CATEGORIA2-FORM-001" for o in resultado.ocorrencias
+    )
+
+
+def test_avaliacao_invalida_suprime_regra_de_negocio_correspondente(
+    tmp_path: Path,
+) -> None:
+    """tipoAvaliacao='X' e um dominio invalido, nao um estado 'ausente' ou
+    'NA' — sem o curto-circuito, BASE-CONT-001 (natureza incompativel com
+    avaliacao) tambem dispararia para a mesma causa raiz."""
+    caminho_planilha = _construir_planilha_com_evento(
+        tmp_path, tipoAvaliacao="X", naturezaContingencia="TRI"
+    )
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    codigos = {o.codigo for o in resultado.ocorrencias}
+    assert "BASE-AVALIACAO-FORM-001" in codigos
+    assert "BASE-CONT-001" not in codigos
+
+
+def test_probabilidade_e_categoria_malformadas_aparecem_juntas(
+    tmp_path: Path,
+) -> None:
+    caminho_planilha = _construir_planilha_com_evento(
+        tmp_path,
+        categoriaNivel2="19",
+        probabilidadePerda="XX",
+        valorRisco=100,
+    )
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    codigos = {o.codigo for o in resultado.ocorrencias}
+    assert "BASE-PROBABILIDADE-FORM-001" in codigos
+    assert "BASE-CATEGORIA2-FORM-001" in codigos
+
+
+def test_probabilidade_invalida_com_avaliacao_individual_suprime_dro001312(
+    tmp_path: Path,
+) -> None:
+    caminho_planilha = _construir_planilha_com_evento(
+        tmp_path,
+        tipoAvaliacao="I",
+        probabilidadePerda="XX",
+        valorRisco=100,
+    )
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    codigos = {o.codigo for o in resultado.ocorrencias}
+    assert "BASE-PROBABILIDADE-FORM-001" in codigos
+    assert "DRO001312" not in codigos
+    assert resultado.status_local == "REPROVADO"
+    assert resultado.status_xsd == "NÃO EXECUTADO"
+
+
+def test_divergencia_entre_linhas_do_evento_tem_precedencia_sobre_formato(
+    tmp_path: Path,
+) -> None:
+    """Duas linhas do mesmo idEvento com tipoAvaliacao divergente: o evento
+    fica inconsistente (BASE-AGR-001) e validar_formatos_e_dominios_evento
+    nem chega a rodar nesta execucao (so roda quando evento.consistente)."""
+    workbook = Workbook()
+    aba_base = workbook.active
+    aba_base.title = "Base"
+    aba_base.append(list(BASE_COLUNAS))
+    linha_1 = dict(CAMPOS_EVENTO_PADRAO)
+    linha_1["tipoAvaliacao"] = "I"
+    aba_base.append([linha_1.get(coluna) for coluna in BASE_COLUNAS])
+    linha_2 = dict(CAMPOS_EVENTO_PADRAO)
+    linha_2["tipoAvaliacao"] = "XX"
+    aba_base.append([linha_2.get(coluna) for coluna in BASE_COLUNAS])
+
+    aba_cabecalho = workbook.create_sheet("Cabecalho")
+    aba_cabecalho.append(list(CABECALHO_COLUNAS))
+    aba_cabecalho.append(
+        [CABECALHO_VALIDO.get(coluna) for coluna in CABECALHO_COLUNAS]
+    )
+    caminho_planilha = tmp_path / "divergencia.xlsx"
+    workbook.save(caminho_planilha)
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    codigos = {o.codigo for o in resultado.ocorrencias}
+    assert "BASE-AGR-001" in codigos
+    assert "BASE-AVALIACAO-FORM-001" not in codigos
+
+
+def test_evento_com_erro_de_formato_e_excluido_da_consolidacao_sem_crash(
+    tmp_path: Path,
+) -> None:
+    """Documento com 2 eventos: um com erro de formato (categoriaNivel2
+    invalida) e outro consolidavel normal. eventos_com_erro_formato exclui
+    o primeiro de consolidar_eventos (secao F do plano) — o principal risco
+    aqui e a exclusao quebrar consolidar_eventos/validar_consolidado; o
+    documento continua REPROVADO pelo erro de formato do primeiro evento."""
+    workbook = Workbook()
+    aba_base = workbook.active
+    aba_base.title = "Base"
+    aba_base.append(list(BASE_COLUNAS))
+
+    evento_malformado = dict(CAMPOS_EVENTO_PADRAO)
+    evento_malformado.update(
+        idEvento="EVT1", categoriaNivel2="19", codigoEventoOrigem="COD1"
+    )
+    aba_base.append(
+        [evento_malformado.get(coluna) for coluna in BASE_COLUNAS]
+    )
+
+    evento_consolidavel = dict(CAMPOS_EVENTO_PADRAO)
+    evento_consolidavel.update(
+        idEvento="EVT2",
+        categoriaNivel1="2",
+        categoriaNivel2="21",
+        codigoEventoOrigem="COD2",
+        valorPerdaEfetiva="10.00",
+    )
+    aba_base.append(
+        [evento_consolidavel.get(coluna) for coluna in BASE_COLUNAS]
+    )
+
+    aba_cabecalho = workbook.create_sheet("Cabecalho")
+    aba_cabecalho.append(list(CABECALHO_COLUNAS))
+    aba_cabecalho.append(
+        [CABECALHO_VALIDO.get(coluna) for coluna in CABECALHO_COLUNAS]
+    )
+    caminho_planilha = tmp_path / "consolidacao_com_erro.xlsx"
+    workbook.save(caminho_planilha)
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    assert resultado.status_local == "REPROVADO"
+    assert resultado.caminho_xml is None
+    assert any(
+        o.codigo == "BASE-CATEGORIA2-FORM-001" for o in resultado.ocorrencias
+    )

@@ -6,6 +6,8 @@ from __future__ import annotations
 from dataclasses import replace
 from decimal import Decimal
 
+import pytest
+
 from src.calculations import (
     construir_mapa_contas,
     construir_mapa_sistemas,
@@ -34,6 +36,7 @@ from src.rules_pre import (
     validar_descricao_materialidade,
     validar_evento,
     validar_evento_apenas_risco,
+    validar_formatos_e_dominios_evento,
     validar_natureza_contingencia_avaliacao,
     validar_natureza_para_risco,
     validar_ordem_datas,
@@ -857,3 +860,81 @@ def test_cabecalho_tem_data_base_valida() -> None:
     assert (
         cabecalho_tem_data_base_valida(_cabecalho(dataBase=None)) is False
     )
+
+
+# ---------------------------------------------------------------------------
+# validar_formatos_e_dominios_evento
+# ---------------------------------------------------------------------------
+
+
+def test_validar_formatos_e_dominios_evento_sem_problemas() -> None:
+    evento = _evento(
+        "EVT-1", [_linha(2, codigoEventoOrigem="COD1")]
+    )
+
+    assert validar_formatos_e_dominios_evento(evento) == []
+
+
+@pytest.mark.parametrize(
+    ("campo", "valor_malformado", "codigo_esperado"),
+    [
+        ("idEvento", "IND@0001", "BASE-IDEVENTO-FORM-001"),
+        ("categoriaNivel1", "9", "BASE-CATEGORIA1-FORM-001"),
+        ("categoriaNivel2", "19", "BASE-CATEGORIA2-FORM-001"),
+        ("tipoAvaliacao", "X", "BASE-AVALIACAO-FORM-001"),
+        ("unidadeNegocio", "9", "BASE-UNIDADE-FORM-001"),
+        ("naturezaContingencia", "XXX", "BASE-NATUREZA-FORM-001"),
+        ("codigoEventoOrigem", "A" * 74, "BASE-EVENTOORIGEM-FORM-001"),
+        ("descricaoEvento", "A" * 201, "BASE-DESCRICAO-FORM-001"),
+        ("idBacen", "X1234567", "BASE-IDBACEN-FORM-001"),
+        ("riscoAssociado", "SIM", "BASE-RISCOASSOCIADO-FORM-001"),
+        (
+            "ligadoRiscoSocioAmbiental",
+            "SIM",
+            "BASE-SOCIOAMBIENTAL-FORM-001",
+        ),
+        ("ligadoRiscoCibernetico", "SIM", "BASE-CIBERNETICO-FORM-001"),
+        ("negocioDescontinuado", "SIM", "BASE-NEGOCIO-FORM-001"),
+    ],
+)
+def test_validar_formatos_e_dominios_evento_campo_malformado(
+    campo: str, valor_malformado: str, codigo_esperado: str
+) -> None:
+    sobrescritas = {"codigoEventoOrigem": "COD1", campo: valor_malformado}
+    evento = _evento("EVT-1", [_linha(2, **sobrescritas)])
+
+    ocorrencias = validar_formatos_e_dominios_evento(evento)
+
+    assert len(ocorrencias) == 1
+    assert ocorrencias[0].codigo == codigo_esperado
+
+
+@pytest.mark.parametrize(
+    "campo",
+    [
+        "idEvento",
+        "categoriaNivel1",
+        "categoriaNivel2",
+        "tipoAvaliacao",
+        "unidadeNegocio",
+        "naturezaContingencia",
+        "codigoEventoOrigem",
+        "idBacen",
+        "riscoAssociado",
+        "ligadoRiscoSocioAmbiental",
+        "ligadoRiscoCibernetico",
+        "negocioDescontinuado",
+    ],
+)
+def test_validar_formatos_e_dominios_evento_campo_ausente_nao_duplica(
+    campo: str,
+) -> None:
+    """Campo ausente/invalido ja e coberto por BASE-OBR-001/BASE-NULO-001;
+    validar_formatos_e_dominios_evento nao deve gerar uma segunda
+    ocorrencia para o mesmo problema."""
+    sobrescritas = {"codigoEventoOrigem": "COD1", campo: None}
+    evento = _evento("EVT-1", [_linha(2, **sobrescritas)])
+
+    ocorrencias = validar_formatos_e_dominios_evento(evento)
+
+    assert ocorrencias == []

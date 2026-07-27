@@ -19,6 +19,8 @@ from src.models import (
     TIPO_ERRO_IMPEDITIVO,
 )
 from src.normalizers import (
+    colapsar_espacos_para_validacao,
+    maiusculizar_campo,
     normalizar_codigo_rotulado,
     normalizar_data,
     normalizar_decimal,
@@ -62,6 +64,24 @@ COLUNAS_SEM_PONTO_E_HIFEN: tuple[str, ...] = (
     "contaCosifCredito",
 )
 
+# Colunas de dominio fechado da Base cujo valor valido e convertido para
+# maiusculo (mesmo tratamento ja aplicado ao Cabecalho, secao 7).
+# idEvento, codSistemaOrigem e idBacen ficam de fora de proposito: sao
+# identidades/referencias externas, nao um conjunto fechado de codigos,
+# e o XSD aceita maiusculo/minusculo para elas.
+COLUNAS_MAIUSCULAS: frozenset[str] = frozenset(
+    {
+        "tipoAvaliacao",
+        "naturezaContingencia",
+        "riscoAssociado",
+        "ligadoRiscoSocioAmbiental",
+        "ligadoRiscoCibernetico",
+        "negocioDescontinuado",
+        "probabilidadePerda",
+        "fonteRecuperacao",
+    }
+)
+
 # Campos que devem ser iguais em todas as linhas do mesmo idEvento (secao 10).
 CAMPOS_CONSTANTES_NO_EVENTO: tuple[str, ...] = (
     "categoriaNivel1",
@@ -84,6 +104,15 @@ CAMPOS_CONSTANTES_NO_EVENTO: tuple[str, ...] = (
 
 CODIGOS_PROBABILIDADE = frozenset({"PR", "PO", "RE"})
 
+# Codigos de formato/dominio (Base) cuja presenca faz conversion.py
+# suprimir as regras de negocio posteriores a montagem do evento (rodam
+# antes do EventoAgrupado existir, entao nao passam por
+# validar_formatos_e_dominios_evento).
+CODIGOS_FORMATO_QUE_SUPRIMEM_REGRAS = frozenset({
+    "BASE-PROBABILIDADE-FORM-001",
+    "BASE-FONTERECUPERACAO-FORM-001",
+})
+
 COLUNAS_CONTABILIZACAO: tuple[str, ...] = (
     "dataContabilizacao",
     "contaBalAnaliticoDebito",
@@ -105,7 +134,9 @@ CAMPOS_CONTABILIZACAO_OBRIGATORIOS: tuple[str, ...] = (
 )
 
 _PADRAO_COSIF = re.compile(r"^(?:[0-9]{8}|[0-9]{10})$")
-_PADRAO_NOME_ASCII = re.compile(r"^[A-Za-z0-9 ]+$")
+_PADRAO_NOME_ASCII = re.compile(r"^[A-Za-z0-9 ]{1,70}$")
+_PADRAO_COD_SISTEMA_ORIGEM = re.compile(r"^[0-9A-Za-z]{1,10}$")
+_PADRAO_CONTA_BAL_ANALITICO = re.compile(r"^[0-9]{1,24}$")
 
 
 # ---------------------------------------------------------------------------
@@ -128,21 +159,22 @@ def normalizar_linha_base(
     for nome in BASE_COLUNAS:
         valor_bruto = brutos.get(nome)
         if nome in COLUNAS_DATA:
-            campos[nome] = normalizar_data(nome, valor_bruto)
+            campo = normalizar_data(nome, valor_bruto)
         elif nome in COLUNAS_DECIMAL:
-            campos[nome] = normalizar_decimal(nome, valor_bruto)
+            campo = normalizar_decimal(nome, valor_bruto)
         elif nome in COLUNAS_CODIGO_ROTULADO:
-            campos[nome] = normalizar_codigo_rotulado(nome, valor_bruto)
+            campo = normalizar_codigo_rotulado(nome, valor_bruto)
         elif nome in COLUNAS_SEM_HIFEN:
-            campos[nome] = normalizar_removendo_caracteres(
-                nome, valor_bruto, "-"
-            )
+            campo = normalizar_removendo_caracteres(nome, valor_bruto, "-")
         elif nome in COLUNAS_SEM_PONTO_E_HIFEN:
-            campos[nome] = normalizar_removendo_caracteres(
+            campo = normalizar_removendo_caracteres(
                 nome, valor_bruto, ".-"
             )
         else:
-            campos[nome] = normalizar_texto(nome, valor_bruto)
+            campo = normalizar_texto(nome, valor_bruto)
+        if nome in COLUNAS_MAIUSCULAS:
+            campo = maiusculizar_campo(campo)
+        campos[nome] = campo
 
     return LinhaNormalizada(numero_linha=numero_linha, campos=campos)
 
@@ -263,7 +295,26 @@ def extrair_probabilidades(
         campo_codigo = linha.campos["probabilidadePerda"]
         campo_valor = linha.campos["valorRisco"]
 
-        if campo_codigo.invalido or campo_valor.invalido:
+        if campo_codigo.invalido:
+            continue
+
+        if campo_codigo.valido:
+            codigo = str(campo_codigo.valor)
+            if codigo not in CODIGOS_PROBABILIDADE:
+                ocorrencias.append(
+                    Ocorrencia(
+                        etapa=ETAPA_AGRUPAMENTO,
+                        tipo=TIPO_ERRO_IMPEDITIVO,
+                        codigo="BASE-PROBABILIDADE-FORM-001",
+                        descricao="probabilidadePerda deve ser PR, PO ou RE.",
+                        detalhe=f"probabilidadePerda={codigo!r}.",
+                        linhas=(linha.numero_linha,),
+                        campos=("probabilidadePerda",),
+                    )
+                )
+                continue  # nao entra no pareamento nem na tupla de probabilidades
+
+        if campo_valor.invalido:
             continue
 
         if campo_codigo.valido and campo_valor.valido:
@@ -351,6 +402,22 @@ def extrair_contabilizacoes(
     ocorrencias: list[Ocorrencia] = []
 
     for linha in linhas:
+        campo_fonte = linha.campos["fonteRecuperacao"]
+        if campo_fonte.valido:
+            fonte = str(campo_fonte.valor)
+            if fonte not in {"S", "O", "NA"}:
+                ocorrencias.append(
+                    Ocorrencia(
+                        etapa=ETAPA_AGRUPAMENTO,
+                        tipo=TIPO_ERRO_IMPEDITIVO,
+                        codigo="BASE-FONTERECUPERACAO-FORM-001",
+                        descricao="fonteRecuperacao deve ser S, O ou NA.",
+                        detalhe=f"fonteRecuperacao={fonte!r}.",
+                        linhas=(linha.numero_linha,),
+                        campos=("fonteRecuperacao",),
+                    )
+                )
+
         campos_preenchidos = [
             nome
             for nome in COLUNAS_CONTABILIZACAO
@@ -575,16 +642,41 @@ def validar_sistemas_e_contas(
 ) -> list[Ocorrencia]:
     ocorrencias: list[Ocorrencia] = []
 
-    nomes_por_codigo_sistema: dict[str, dict[str, list[int]]] = {}
-    nomes_por_codigo_conta: dict[str, dict[str, list[int]]] = {}
+    # codigo -> nome_colapsado -> (nome_original_representativo, [linhas]).
+    # Usado so para BASE-SIS-001/BASE-CONTA-001 (mesmo codigo, nomes
+    # diferentes) — a chave colapsada evita falso conflito por espacamento
+    # ("Sistema de Risco" vs "Sistema   de   Risco").
+    nomes_por_codigo_sistema: dict[str, dict[str, tuple[str, list[int]]]] = {}
+    nomes_por_codigo_conta: dict[str, dict[str, tuple[str, list[int]]]] = {}
+
+    # Estruturas independentes para formato: cada uma dispara mesmo se o
+    # campo irmao (codigo sem nome, ou nome sem codigo) estiver ausente.
+    linhas_por_codigo_sistema: dict[str, list[int]] = {}
+    linhas_por_nome_sistema: dict[str, tuple[str, list[int]]] = {}
+    linhas_por_codigo_conta: dict[str, list[tuple[int, str]]] = {}
+    linhas_por_nome_conta: dict[str, tuple[str, list[tuple[int, str]]]] = {}
 
     for linha in linhas:
         codigo_sistema = linha.valor("codSistemaOrigem")
         nome_sistema = linha.valor("nomeSistema")
-        if codigo_sistema is not None and nome_sistema is not None:
-            nomes_por_codigo_sistema.setdefault(str(codigo_sistema), {}).setdefault(
-                str(nome_sistema), []
+
+        if codigo_sistema is not None:
+            linhas_por_codigo_sistema.setdefault(
+                str(codigo_sistema), []
             ).append(linha.numero_linha)
+        if nome_sistema is not None:
+            nome_str = str(nome_sistema)
+            colapsado = colapsar_espacos_para_validacao(nome_str)
+            _, linhas_do_nome = linhas_por_nome_sistema.setdefault(
+                colapsado, (nome_str, [])
+            )
+            linhas_do_nome.append(linha.numero_linha)
+        if codigo_sistema is not None and nome_sistema is not None:
+            nome_str = str(nome_sistema)
+            colapsado = colapsar_espacos_para_validacao(nome_str)
+            grupo = nomes_por_codigo_sistema.setdefault(str(codigo_sistema), {})
+            _, linhas_do_par = grupo.setdefault(colapsado, (nome_str, []))
+            linhas_do_par.append(linha.numero_linha)
 
         for campo_conta, campo_nome in (
             ("contaBalAnaliticoDebito", "nomeContaDebito"),
@@ -592,10 +684,24 @@ def validar_sistemas_e_contas(
         ):
             codigo_conta = linha.valor(campo_conta)
             nome_conta = linha.valor(campo_nome)
+
+            if codigo_conta is not None:
+                linhas_por_codigo_conta.setdefault(str(codigo_conta), []).append(
+                    (linha.numero_linha, campo_conta)
+                )
+            if nome_conta is not None:
+                nome_str = str(nome_conta)
+                colapsado = colapsar_espacos_para_validacao(nome_str)
+                _, linhas_do_nome = linhas_por_nome_conta.setdefault(
+                    colapsado, (nome_str, [])
+                )
+                linhas_do_nome.append((linha.numero_linha, campo_nome))
             if codigo_conta is not None and nome_conta is not None:
-                nomes_por_codigo_conta.setdefault(
-                    str(codigo_conta), {}
-                ).setdefault(str(nome_conta), []).append(linha.numero_linha)
+                nome_str = str(nome_conta)
+                colapsado = colapsar_espacos_para_validacao(nome_str)
+                grupo = nomes_por_codigo_conta.setdefault(str(codigo_conta), {})
+                _, linhas_do_par = grupo.setdefault(colapsado, (nome_str, []))
+                linhas_do_par.append(linha.numero_linha)
 
         for campo_cosif, campo_conta in (
             ("contaCosifDebito", "contaBalAnaliticoDebito"),
@@ -648,9 +754,12 @@ def validar_sistemas_e_contas(
             linhas_afetadas = tuple(
                 sorted(
                     numero
-                    for numeros in nomes.values()
+                    for _, numeros in nomes.values()
                     for numero in numeros
                 )
+            )
+            nomes_originais = sorted(
+                nome_original for nome_original, _ in nomes.values()
             )
             ocorrencias.append(
                 Ocorrencia(
@@ -660,7 +769,7 @@ def validar_sistemas_e_contas(
                     descricao="Mesmo sistema associado a nomes diferentes.",
                     detalhe=(
                         f"codSistemaOrigem={codigo!r} possui os nomes: "
-                        f"{', '.join(sorted(nomes))}."
+                        f"{', '.join(nomes_originais)}."
                     ),
                     linhas=linhas_afetadas,
                     campos=("codSistemaOrigem", "nomeSistema"),
@@ -672,9 +781,12 @@ def validar_sistemas_e_contas(
             linhas_afetadas = tuple(
                 sorted(
                     numero
-                    for numeros in nomes.values()
+                    for _, numeros in nomes.values()
                     for numero in numeros
                 )
+            )
+            nomes_originais = sorted(
+                nome_original for nome_original, _ in nomes.values()
             )
             ocorrencias.append(
                 Ocorrencia(
@@ -684,13 +796,93 @@ def validar_sistemas_e_contas(
                     descricao="Mesma conta associada a nomes diferentes.",
                     detalhe=(
                         f"conta={codigo!r} possui os nomes: "
-                        f"{', '.join(sorted(nomes))}."
+                        f"{', '.join(nomes_originais)}."
                     ),
                     linhas=linhas_afetadas,
                     campos=(
                         "contaBalAnaliticoDebito",
                         "contaBalAnaliticoCredito",
                     ),
+                )
+            )
+
+    for codigo, linhas_do_codigo in linhas_por_codigo_sistema.items():
+        if not _PADRAO_COD_SISTEMA_ORIGEM.fullmatch(codigo):
+            ocorrencias.append(
+                Ocorrencia(
+                    etapa=ETAPA_AGRUPAMENTO,
+                    tipo=TIPO_ERRO_IMPEDITIVO,
+                    codigo="BASE-SISTEMA-FORM-001",
+                    descricao=(
+                        "codSistemaOrigem deve ser alfanumérico, até 10 "
+                        "caracteres."
+                    ),
+                    detalhe=f"codSistemaOrigem={codigo!r}.",
+                    linhas=tuple(sorted(linhas_do_codigo)),
+                    campos=("codSistemaOrigem",),
+                )
+            )
+
+    for colapsado, (nome_original, linhas_do_nome) in linhas_por_nome_sistema.items():
+        if not _PADRAO_NOME_ASCII.fullmatch(colapsado):
+            ocorrencias.append(
+                Ocorrencia(
+                    etapa=ETAPA_AGRUPAMENTO,
+                    tipo=TIPO_ERRO_IMPEDITIVO,
+                    codigo="BASE-NOMESISTEMA-FORM-001",
+                    descricao=(
+                        "nomeSistema deve ser alfanumérico+espaço, até 70 "
+                        "caracteres."
+                    ),
+                    detalhe=f"nomeSistema={nome_original!r}.",
+                    linhas=tuple(sorted(linhas_do_nome)),
+                    campos=("nomeSistema",),
+                )
+            )
+
+    for codigo, ocorrencias_do_codigo in linhas_por_codigo_conta.items():
+        if not _PADRAO_CONTA_BAL_ANALITICO.fullmatch(codigo):
+            linhas_afetadas = tuple(
+                sorted({numero for numero, _ in ocorrencias_do_codigo})
+            )
+            campos_afetados = tuple(
+                sorted({campo for _, campo in ocorrencias_do_codigo})
+            )
+            ocorrencias.append(
+                Ocorrencia(
+                    etapa=ETAPA_AGRUPAMENTO,
+                    tipo=TIPO_ERRO_IMPEDITIVO,
+                    codigo="BASE-CONTABAL-FORM-001",
+                    descricao=(
+                        "Conta interna (contaBalAnaliticoDebito/Credito) "
+                        "deve ter de 1 a 24 dígitos."
+                    ),
+                    detalhe=f"conta={codigo!r}.",
+                    linhas=linhas_afetadas,
+                    campos=campos_afetados,
+                )
+            )
+
+    for colapsado, (nome_original, ocorrencias_do_nome) in linhas_por_nome_conta.items():
+        if not _PADRAO_NOME_ASCII.fullmatch(colapsado):
+            linhas_afetadas = tuple(
+                sorted({numero for numero, _ in ocorrencias_do_nome})
+            )
+            campos_afetados = tuple(
+                sorted({campo for _, campo in ocorrencias_do_nome})
+            )
+            ocorrencias.append(
+                Ocorrencia(
+                    etapa=ETAPA_AGRUPAMENTO,
+                    tipo=TIPO_ERRO_IMPEDITIVO,
+                    codigo="BASE-NOMECONTA-FORM-001",
+                    descricao=(
+                        "Nome da conta interna (nomeContaDebito/Credito) "
+                        "deve ser alfanumérico+espaço, até 70 caracteres."
+                    ),
+                    detalhe=f"nomeConta={nome_original!r}.",
+                    linhas=linhas_afetadas,
+                    campos=campos_afetados,
                 )
             )
 

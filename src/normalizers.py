@@ -46,6 +46,9 @@ _PADRAO_DECIMAL_INTEIRO = re.compile(r"^[0-9]+$")
 _PADRAO_DECIMAL_UM_SEPARADOR = re.compile(r"^([0-9]+)([.,])([0-9]+)$")
 _PADRAO_DECIMAL_AGRUPADO = re.compile(r"^[0-9]{1,3}(?:\.[0-9]{3})+,[0-9]{2}$")
 
+# so espaco comum/tab/CR/LF - ver colapsar_espacos_para_validacao.
+_PADRAO_ESPACOS_XSD = re.compile(r"[ \t\r\n]+")
+
 
 def _interpretar_valor_monetario(corpo: str) -> str | None:
     """Interpreta o texto de um valor monetario (sem o sinal `-`).
@@ -141,16 +144,33 @@ def normalizar_codigo_rotulado(nome: str, valor: object) -> CampoNormalizado:
     return campo
 
 
+def maiusculizar_campo(campo: CampoNormalizado) -> CampoNormalizado:
+    """Converte para maiusculo um campo textual ja normalizado. Permite
+    compor maiusculizacao com outras normalizacoes (codigo rotulado,
+    texto simples) sem duplicar logica de estado."""
+
+    if not campo.valido:
+        return campo
+    if not isinstance(campo.valor, str):
+        raise TypeError(
+            f"O campo {campo.nome!r} não contém valor textual: "
+            f"{type(campo.valor).__name__}."
+        )
+    return CampoNormalizado(
+        nome=campo.nome,
+        valor_original=campo.valor_original,
+        valor=campo.valor.upper(),
+        status=StatusCampo.VALIDO,
+    )
+
+
 def normalizar_maiusculo(nome: str, valor: object) -> CampoNormalizado:
     """Igual a normalizar_texto, mas converte o texto valido para
     maiusculo (secao 7: codigoConglomerado, tipoRemessa,
     opcaoPorProvisaoAcumulada). Nao e correcao de valor invalido — letras
     minusculas representam o mesmo codigo."""
 
-    campo = normalizar_texto(nome, valor)
-    if not campo.valido:
-        return campo
-    return CampoNormalizado(nome, valor, campo.valor.upper(), StatusCampo.VALIDO)
+    return maiusculizar_campo(normalizar_texto(nome, valor))
 
 
 _CARACTERES_CNPJ_REMOVIDOS = str.maketrans("", "", ".-/")
@@ -209,6 +229,19 @@ def normalizar_removendo_caracteres(
     return CampoNormalizado(
         nome, valor, campo.valor.translate(tabela), StatusCampo.VALIDO
     )
+
+
+def colapsar_espacos_para_validacao(texto: str) -> str:
+    """Replica xs:whiteSpace="collapse" do XSD para validacao local: so
+    espaco comum/tab/CR/LF sao colapsados para um espaco e as bordas sao
+    aparadas. Nao usa str.split()/\\s — esses tratariam outros caracteres
+    Unicode "parecidos com espaco" (ex. espaco nao-separavel) como
+    espaco, mascarando um caractere que o XSD rejeitaria de verdade.
+    Uso exclusivo de checagem — nao corrige nem substitui o valor
+    armazenado/emitido no XML."""
+
+    colapsado = _PADRAO_ESPACOS_XSD.sub(" ", texto)
+    return colapsado.strip(" ")
 
 
 def normalizar_data(nome: str, valor: object) -> CampoNormalizado:

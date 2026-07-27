@@ -21,6 +21,7 @@ from src.models import (
     Ocorrencia,
     TIPO_ERRO_IMPEDITIVO,
 )
+from src.normalizers import colapsar_espacos_para_validacao
 from src.regulatory_constants import (
     CODIGOS_CONGLOMERADOS_VALIDOS,
     CONTAS_COSIF_VALIDAS,
@@ -32,6 +33,23 @@ from src.regulatory_constants import (
 LIMIAR_MATERIALIDADE = Decimal("1000000.00")
 
 NATUREZAS_CONTINGENCIA = frozenset({"TRI", "TRA", "CIV"})
+
+# Formato/tamanho/dominio dos campos constantes no evento (secao 20 do
+# plano: espelha facetas do XSD 06/2025 que hoje so seriam pegas tarde,
+# na validacao contra o XSD). Ver validar_formatos_e_dominios_evento.
+_PADRAO_ID_EVENTO = re.compile(r"^[0-9A-Za-z]{1,40}$")
+_PADRAO_CATEGORIA_NIVEL1 = re.compile(r"^[1-8]$")
+_PADRAO_CATEGORIA_NIVEL2 = re.compile(
+    r"^(?:11|12|21|22|31|32|33|41|42|43|44|45|51|61|71|8[1-6])$"
+)
+TIPOS_AVALIACAO_VALIDOS = frozenset({"I", "M", "NA"})
+_PADRAO_UNIDADE_NEGOCIO = re.compile(r"^[1-8]$")
+NATUREZAS_CONTINGENCIA_VALIDAS = NATUREZAS_CONTINGENCIA | {"NA"}
+_PADRAO_CODIGO_EVENTO_ORIGEM = re.compile(r"^[0-9A-Za-z]{1,73}$")
+LIMITE_DESCRICAO_EVENTO = 200
+_PADRAO_ID_BACEN = re.compile(r"^(?:[Zz][0-9]{7}|[Ii][0-9]{5})$")
+RISCOS_ASSOCIADOS_VALIDOS = frozenset({"C", "M", "NA"})
+OPCOES_SIM_NAO = frozenset({"S", "N"})
 
 
 def _erro(
@@ -762,6 +780,137 @@ def validar_evento(evento: EventoAgrupado) -> list[Ocorrencia]:
             ocorrencias.append(resultado)
     for regra in REGRAS_VARIOS_RESULTADOS:
         ocorrencias.extend(regra(evento))
+    return ocorrencias
+
+
+def validar_formatos_e_dominios_evento(
+    evento: EventoAgrupado,
+) -> list[Ocorrencia]:
+    """Formato/tamanho/dominio dos campos constantes no evento, espelhando
+    facetas do XSD 06/2025 que hoje so seriam pegas tarde, na validacao
+    contra o XSD (etapa 22). Cada campo e checado so quando ja passou do
+    estado ausente/invalido, para nao duplicar BASE-OBR-001/BASE-NULO-001.
+    Chamada por conversion.py antes de validar_evento/validar_evento_pos/
+    referencias/consolidacao, que sao suprimidas quando esta funcao
+    encontra qualquer problema."""
+
+    ocorrencias: list[Ocorrencia] = []
+
+    def _campo(nome: str) -> tuple[bool, object]:
+        campo = evento.linhas[0].campos.get(nome)
+        if campo is None or campo.ausente or campo.invalido:
+            return False, None
+        return True, campo.valor
+
+    ok, valor = _campo("idEvento")
+    if ok and not _PADRAO_ID_EVENTO.fullmatch(str(valor)):
+        ocorrencias.append(_erro(
+            evento, "BASE-IDEVENTO-FORM-001",
+            "idEvento deve ser alfanumérico, de 1 a 40 caracteres.",
+            f"idEvento={valor!r} (após remoção de hífen).", ("idEvento",),
+        ))
+
+    ok, valor = _campo("categoriaNivel1")
+    if ok and not _PADRAO_CATEGORIA_NIVEL1.fullmatch(str(valor)):
+        ocorrencias.append(_erro(
+            evento, "BASE-CATEGORIA1-FORM-001",
+            "categoriaNivel1 deve ser um dígito de 1 a 8.",
+            f"categoriaNivel1={valor!r}.", ("categoriaNivel1",),
+        ))
+
+    ok, valor = _campo("categoriaNivel2")
+    if ok and not _PADRAO_CATEGORIA_NIVEL2.fullmatch(str(valor)):
+        ocorrencias.append(_erro(
+            evento, "BASE-CATEGORIA2-FORM-001",
+            "categoriaNivel2 não está na lista oficial de códigos.",
+            f"categoriaNivel2={valor!r}.", ("categoriaNivel2",),
+        ))
+
+    ok, valor = _campo("tipoAvaliacao")
+    if ok and str(valor) not in TIPOS_AVALIACAO_VALIDOS:
+        ocorrencias.append(_erro(
+            evento, "BASE-AVALIACAO-FORM-001",
+            "tipoAvaliacao deve ser I, M ou NA.",
+            f"tipoAvaliacao={valor!r}.", ("tipoAvaliacao",),
+        ))
+
+    ok, valor = _campo("unidadeNegocio")
+    if ok and not _PADRAO_UNIDADE_NEGOCIO.fullmatch(str(valor)):
+        ocorrencias.append(_erro(
+            evento, "BASE-UNIDADE-FORM-001",
+            "unidadeNegocio deve ser um dígito de 1 a 8.",
+            f"unidadeNegocio={valor!r}.", ("unidadeNegocio",),
+        ))
+
+    ok, valor = _campo("naturezaContingencia")
+    if ok and str(valor) not in NATUREZAS_CONTINGENCIA_VALIDAS:
+        ocorrencias.append(_erro(
+            evento, "BASE-NATUREZA-FORM-001",
+            "naturezaContingencia deve ser TRI, TRA, CIV ou NA.",
+            f"naturezaContingencia={valor!r}.", ("naturezaContingencia",),
+        ))
+
+    ok, valor = _campo("codigoEventoOrigem")
+    if ok and not _PADRAO_CODIGO_EVENTO_ORIGEM.fullmatch(str(valor)):
+        ocorrencias.append(_erro(
+            evento, "BASE-EVENTOORIGEM-FORM-001",
+            "codigoEventoOrigem deve ser alfanumérico, de 1 a 73 caracteres.",
+            f"codigoEventoOrigem={valor!r}.", ("codigoEventoOrigem",),
+        ))
+
+    ok, valor = _campo("descricaoEvento")
+    if ok:
+        colapsado = colapsar_espacos_para_validacao(str(valor))
+        if len(colapsado) > LIMITE_DESCRICAO_EVENTO:
+            ocorrencias.append(_erro(
+                evento, "BASE-DESCRICAO-FORM-001",
+                f"descricaoEvento excede {LIMITE_DESCRICAO_EVENTO} caracteres.",
+                f"descricaoEvento tem {len(colapsado)} caracteres após "
+                "colapsar espaços.",
+                ("descricaoEvento",),
+            ))
+
+    ok, valor = _campo("idBacen")
+    if ok and not _PADRAO_ID_BACEN.fullmatch(str(valor)):
+        ocorrencias.append(_erro(
+            evento, "BASE-IDBACEN-FORM-001",
+            'idBacen deve ser "Z" + 7 dígitos ou "I" + 5 dígitos.',
+            f"idBacen={valor!r}.", ("idBacen",),
+        ))
+
+    ok, valor = _campo("riscoAssociado")
+    if ok and str(valor) not in RISCOS_ASSOCIADOS_VALIDOS:
+        ocorrencias.append(_erro(
+            evento, "BASE-RISCOASSOCIADO-FORM-001",
+            "riscoAssociado deve ser C, M ou NA.",
+            f"riscoAssociado={valor!r}.", ("riscoAssociado",),
+        ))
+
+    ok, valor = _campo("ligadoRiscoSocioAmbiental")
+    if ok and str(valor) not in OPCOES_SIM_NAO:
+        ocorrencias.append(_erro(
+            evento, "BASE-SOCIOAMBIENTAL-FORM-001",
+            "ligadoRiscoSocioAmbiental deve ser S ou N.",
+            f"ligadoRiscoSocioAmbiental={valor!r}.",
+            ("ligadoRiscoSocioAmbiental",),
+        ))
+
+    ok, valor = _campo("ligadoRiscoCibernetico")
+    if ok and str(valor) not in OPCOES_SIM_NAO:
+        ocorrencias.append(_erro(
+            evento, "BASE-CIBERNETICO-FORM-001",
+            "ligadoRiscoCibernetico deve ser S ou N.",
+            f"ligadoRiscoCibernetico={valor!r}.", ("ligadoRiscoCibernetico",),
+        ))
+
+    ok, valor = _campo("negocioDescontinuado")
+    if ok and str(valor) not in OPCOES_SIM_NAO:
+        ocorrencias.append(_erro(
+            evento, "BASE-NEGOCIO-FORM-001",
+            "negocioDescontinuado deve ser S ou N.",
+            f"negocioDescontinuado={valor!r}.", ("negocioDescontinuado",),
+        ))
+
     return ocorrencias
 
 

@@ -7,10 +7,11 @@ from decimal import Decimal
 
 import pytest
 
-from src.models import StatusCampo
+from src.models import CampoNormalizado, StatusCampo
 from src.normalizers import (
     _decimal_fora_da_faixa,
     detectar_ausencia_e_invalidez,
+    maiusculizar_campo,
     normalizar_cnpj,
     normalizar_codigo_rotulado,
     normalizar_data,
@@ -423,6 +424,33 @@ def test_normalizar_maiusculo_ausente() -> None:
 def test_normalizar_maiusculo_marcador_invalido() -> None:
     campo = normalizar_maiusculo("codigoConglomerado", "NULL")
     assert campo.status is StatusCampo.INVALIDO
+
+
+def test_maiusculizar_campo_converte_valor_valido() -> None:
+    campo = CampoNormalizado("tipoAvaliacao", "i", "i", StatusCampo.VALIDO)
+    resultado = maiusculizar_campo(campo)
+    assert resultado.valor == "I"
+    assert resultado.status is StatusCampo.VALIDO
+
+
+def test_maiusculizar_campo_preserva_ausente() -> None:
+    campo = CampoNormalizado("tipoAvaliacao", None, None, StatusCampo.AUSENTE)
+    resultado = maiusculizar_campo(campo)
+    assert resultado is campo
+
+
+def test_maiusculizar_campo_preserva_invalido() -> None:
+    campo = CampoNormalizado(
+        "tipoAvaliacao", "NULL", None, StatusCampo.INVALIDO, motivo="x"
+    )
+    resultado = maiusculizar_campo(campo)
+    assert resultado is campo
+
+
+def test_maiusculizar_campo_rejeita_valor_nao_textual() -> None:
+    campo = CampoNormalizado("valorRisco", 100, Decimal("100"), StatusCampo.VALIDO)
+    with pytest.raises(TypeError):
+        maiusculizar_campo(campo)
 
 
 @pytest.mark.parametrize(

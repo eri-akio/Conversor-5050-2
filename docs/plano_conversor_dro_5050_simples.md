@@ -1088,6 +1088,25 @@ de saída do XML.
 | `BASE-CAB-PROVACUM-001` | `opcaoPorProvisaoAcumulada` ausente, inválida ou fora de `{S,N}` |
 | `BASE-DATA-PERIODO-001` | `dataOcorrencia`/`dataDescoberta`/`dataContabilizacao` posterior ao período da `dataBase` |
 | `BASE-IDEVENTO-COLISAO-001` | dois ou mais `idEvento` originais distintos colidem no mesmo valor normalizado |
+| `BASE-IDEVENTO-FORM-001` | `idEvento` (após remoção de hífen) fora do padrão alfanumérico de 1 a 40 caracteres |
+| `BASE-CATEGORIA1-FORM-001` | `categoriaNivel1` fora de `[1-8]` |
+| `BASE-CATEGORIA2-FORM-001` | `categoriaNivel2` fora da lista oficial de códigos |
+| `BASE-AVALIACAO-FORM-001` | `tipoAvaliacao` fora de `{I,M,NA}` |
+| `BASE-UNIDADE-FORM-001` | `unidadeNegocio` fora de `[1-8]` |
+| `BASE-NATUREZA-FORM-001` | `naturezaContingencia` fora de `{TRI,TRA,CIV,NA}` |
+| `BASE-SISTEMA-FORM-001` | `codSistemaOrigem` fora do padrão alfanumérico de até 10 caracteres |
+| `BASE-EVENTOORIGEM-FORM-001` | `codigoEventoOrigem` fora do padrão alfanumérico de 1 a 73 caracteres |
+| `BASE-DESCRICAO-FORM-001` | `descricaoEvento` excede 200 caracteres (após colapsar espaços) |
+| `BASE-IDBACEN-FORM-001` | `idBacen` fora do padrão `Z`/`z` + 7 dígitos ou `I`/`i` + 5 dígitos |
+| `BASE-RISCOASSOCIADO-FORM-001` | `riscoAssociado` fora de `{C,M,NA}` |
+| `BASE-SOCIOAMBIENTAL-FORM-001` | `ligadoRiscoSocioAmbiental` fora de `{S,N}` |
+| `BASE-CIBERNETICO-FORM-001` | `ligadoRiscoCibernetico` fora de `{S,N}` |
+| `BASE-NEGOCIO-FORM-001` | `negocioDescontinuado` fora de `{S,N}` |
+| `BASE-PROBABILIDADE-FORM-001` | `probabilidadePerda` fora de `{PR,PO,RE}` |
+| `BASE-FONTERECUPERACAO-FORM-001` | `fonteRecuperacao` fora de `{S,O,NA}` |
+| `BASE-NOMESISTEMA-FORM-001` | `nomeSistema` fora do padrão alfanumérico+espaço de até 70 caracteres (após colapsar espaços) |
+| `BASE-CONTABAL-FORM-001` | `contaBalAnaliticoDebito`/`Credito` fora do padrão numérico de 1 a 24 dígitos |
+| `BASE-NOMECONTA-FORM-001` | `nomeContaDebito`/`nomeContaCredito` fora do padrão alfanumérico+espaço de até 70 caracteres (após colapsar espaços) |
 | `CONS-CALC-001` | dados insuficientes para calcular consolidados |
 | `XSD-001` | XML incompatível com o XSD 06/2025 |
 | `XML-TEC-001` | falha técnica ao construir o XML em memória |

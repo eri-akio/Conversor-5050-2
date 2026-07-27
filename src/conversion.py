@@ -10,6 +10,7 @@ from pathlib import Path
 from lxml import etree
 
 from src.calculations import (
+    CODIGOS_FORMATO_QUE_SUPRIMEM_REGRAS,
     agrupar_linhas_por_evento,
     construir_mapa_contas,
     construir_mapa_sistemas,
@@ -45,6 +46,7 @@ from src.rules_pre import (
     validar_codigo_conglomerado_unicad,
     validar_contas_referenciadas,
     validar_evento,
+    validar_formatos_e_dominios_evento,
     validar_sistema_referenciado,
     validar_unicidade_do_documento,
 )
@@ -180,28 +182,47 @@ def processar(
 
     grupos = agrupar_linhas_por_evento(linhas_normalizadas)
     eventos = {}
+    eventos_com_erro_formato: set[str] = set()
     for id_evento, linhas_do_evento in grupos.items():
         evento, ocorrencias_evento = montar_evento(id_evento, linhas_do_evento)
         eventos[id_evento] = evento
         ocorrencias.extend(ocorrencias_evento)
 
+        erro_formato_na_montagem = any(
+            o.codigo in CODIGOS_FORMATO_QUE_SUPRIMEM_REGRAS
+            for o in ocorrencias_evento
+        )
+
         if evento.consistente:
-            ocorrencias.extend(validar_evento(evento))
-            ocorrencias.extend(validar_evento_pos(evento))
-            ocorrencia_sistema = validar_sistema_referenciado(evento, sistemas)
-            if ocorrencia_sistema is not None:
-                ocorrencias.append(ocorrencia_sistema)
-            ocorrencias.extend(validar_contas_referenciadas(evento, contas))
-            if data_base_valida:
-                ocorrencias.extend(
-                    validar_datas_apos_data_base(evento, data_base)
-                )
+            ocorrencias_formato = validar_formatos_e_dominios_evento(evento)
+            ocorrencias.extend(ocorrencias_formato)
+
+            tem_erro_formato = erro_formato_na_montagem or bool(ocorrencias_formato)
+
+            if not tem_erro_formato:
+                ocorrencias.extend(validar_evento(evento))
+                ocorrencias.extend(validar_evento_pos(evento))
+                ocorrencia_sistema = validar_sistema_referenciado(evento, sistemas)
+                if ocorrencia_sistema is not None:
+                    ocorrencias.append(ocorrencia_sistema)
+                ocorrencias.extend(validar_contas_referenciadas(evento, contas))
+                if data_base_valida:
+                    ocorrencias.extend(
+                        validar_datas_apos_data_base(evento, data_base)
+                    )
+            else:
+                eventos_com_erro_formato.add(id_evento)
 
     ocorrencias.extend(validar_unicidade_do_documento(eventos))
 
     consolidados = {}
     if data_base_valida:
-        consolidados = consolidar_eventos(eventos, data_base)
+        eventos_para_consolidar = {
+            id_evento: evento
+            for id_evento, evento in eventos.items()
+            if id_evento not in eventos_com_erro_formato
+        }
+        consolidados = consolidar_eventos(eventos_para_consolidar, data_base)
         for consolidado in consolidados.values():
             ocorrencias.extend(validar_consolidado(consolidado))
 
