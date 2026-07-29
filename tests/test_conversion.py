@@ -389,6 +389,29 @@ def test_avaliacao_invalida_suprime_regra_de_negocio_correspondente(
     assert "BASE-CONT-001" not in codigos
 
 
+def test_dro001302_dispara_mesmo_com_erro_de_formato_em_campo_nao_relacionado(
+    tmp_path: Path,
+) -> None:
+    """categoriaNivel2 invalido aciona o curto-circuito de formato
+    (BASE-CATEGORIA2-FORM-001), que suprime validar_evento() -- mas a
+    DRO001302 e chamada separadamente por conversion.py, antes desse
+    curto-circuito, e deve continuar aparecendo mesmo assim."""
+    caminho_planilha = _construir_planilha_com_evento(
+        tmp_path,
+        tipoAvaliacao="I",
+        naturezaContingencia="TRI",
+        categoriaNivel2="19",
+        valorProvisao=None,
+    )
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    codigos = {o.codigo for o in resultado.ocorrencias}
+    assert "BASE-CATEGORIA2-FORM-001" in codigos
+    assert "BASE-CONT-OBR-001" in codigos
+    assert "DRO001302" in codigos
+
+
 def test_probabilidade_e_categoria_malformadas_aparecem_juntas(
     tmp_path: Path,
 ) -> None:

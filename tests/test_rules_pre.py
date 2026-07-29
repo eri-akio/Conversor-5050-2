@@ -22,6 +22,7 @@ from src.normalizers import (
 )
 from src.reader import BASE_COLUNAS
 from src.rules_pre import (
+    REGRAS_UM_RESULTADO,
     cabecalho_tem_data_base_valida,
     classificar_evento,
     validar_cabecalho,
@@ -239,6 +240,130 @@ def test_evento_exclusivamente_de_risco_nao_gera_dro001302() -> None:
     evento = _evento("EVT-1", linhas)
 
     assert validar_provisao_avaliacao_im(evento) is None
+
+
+def test_outra_linha_com_provisao_valida_nao_encobre_linha_com_provisao_ausente() -> (
+    None
+):
+    linhas = [
+        _linha(
+            2,
+            tipoAvaliacao="I",
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=100,
+            valorRecuperacao=0,
+        ),
+        _linha(
+            3,
+            tipoAvaliacao="I",
+            dataContabilizacao="2025-06-20",
+            valorPerdaEfetiva=0,
+            valorProvisao=None,
+            valorRecuperacao=0,
+        ),
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    ocorrencia = validar_provisao_avaliacao_im(evento)
+    assert ocorrencia is not None
+    assert ocorrencia.codigo == "DRO001302"
+    assert ocorrencia.linhas == (3,)
+
+
+def test_provisao_invalida_sem_outros_campos_contabeis_gera_dro001302() -> None:
+    linhas = [_linha(2, tipoAvaliacao="M", valorProvisao="ABC")]
+    evento = _evento("EVT-1", linhas)
+
+    ocorrencia = validar_provisao_avaliacao_im(evento)
+    assert ocorrencia is not None
+    assert ocorrencia.codigo == "DRO001302"
+    assert ocorrencia.linhas == (2,)
+
+
+def test_provisao_valida_com_data_contabilizacao_ausente_nao_gera_dro001302() -> None:
+    """Provisao informada corretamente, mas a linha e descartada por outro
+    campo obrigatorio ausente (dataContabilizacao) -- ja coberto por
+    BASE-CONT-OBR-001, nao deve tambem gerar DRO001302."""
+
+    linhas = [
+        _linha(
+            2,
+            tipoAvaliacao="I",
+            dataContabilizacao=None,
+            valorPerdaEfetiva=0,
+            valorProvisao=500,
+            valorRecuperacao=0,
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert validar_provisao_avaliacao_im(evento) is None
+
+
+def test_provisao_negativa_nao_gera_dro001302() -> None:
+    linhas = [
+        _linha(
+            2,
+            tipoAvaliacao="I",
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=Decimal("-500.00"),
+            valorRecuperacao=0,
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert validar_provisao_avaliacao_im(evento) is None
+
+
+def test_tentativa_contabil_invalida_com_risco_nao_e_apenas_risco() -> None:
+    """Uma tentativa de contabilizacao invalida nao pode fazer o evento
+    parecer 'exclusivamente de risco' e escapar da DRO001302."""
+
+    linhas = [
+        _linha(
+            2,
+            tipoAvaliacao="I",
+            probabilidadePerda="PR",
+            valorRisco=15_000_000,
+            dataContabilizacao="2025-06-15",
+            valorProvisao="ABC",
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    ocorrencia = validar_provisao_avaliacao_im(evento)
+    assert ocorrencia is not None
+    assert ocorrencia.codigo == "DRO001302"
+
+
+def test_linha_exclusiva_de_probabilidade_nao_conta_como_contabilizacao() -> None:
+    linhas = [
+        _linha(
+            2,
+            tipoAvaliacao="I",
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=100,
+            valorRecuperacao=0,
+        ),
+        _linha(3, tipoAvaliacao="I", probabilidadePerda="PR", valorRisco=100),
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert validar_provisao_avaliacao_im(evento) is None
+
+
+def test_validar_provisao_avaliacao_im_nao_esta_em_regras_um_resultado() -> None:
+    assert validar_provisao_avaliacao_im not in REGRAS_UM_RESULTADO
+
+
+def test_validar_evento_isolado_nao_gera_mais_dro001302() -> None:
+    evento = _evento("EVT-1", [_linha(2, tipoAvaliacao="I")])
+
+    codigos = [o.codigo for o in validar_evento(evento)]
+    assert "DRO001302" not in codigos
 
 
 def test_probabilidade_obrigatoria_individual_ausente_gera_dro001312() -> None:

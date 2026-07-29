@@ -47,6 +47,7 @@ from src.rules_pre import (
     validar_contas_referenciadas,
     validar_evento,
     validar_formatos_e_dominios_evento,
+    validar_provisao_avaliacao_im,
     validar_sistema_referenciado,
     validar_unicidade_do_documento,
 )
@@ -194,6 +195,10 @@ def processar(
         )
 
         if evento.consistente:
+            ocorrencia_provisao = validar_provisao_avaliacao_im(evento)
+            if ocorrencia_provisao is not None:
+                ocorrencias.append(ocorrencia_provisao)
+
             ocorrencias_formato = validar_formatos_e_dominios_evento(evento)
             ocorrencias.extend(ocorrencias_formato)
 

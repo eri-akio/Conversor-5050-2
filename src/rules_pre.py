@@ -14,10 +14,12 @@ import re
 from datetime import date
 from decimal import Decimal
 
+from src.calculations import COLUNAS_CONTABILIZACAO
 from src.models import (
     CampoNormalizado,
     ETAPA_PRE_PROCESSAMENTO,
     EventoAgrupado,
+    LinhaNormalizada,
     Ocorrencia,
     TIPO_ERRO_IMPEDITIVO,
 )
@@ -309,29 +311,74 @@ def validar_descricao_materialidade(evento: EventoAgrupado) -> Ocorrencia | None
     return None
 
 
+def _linhas_com_contabilizacao_iniciada(
+    evento: EventoAgrupado,
+) -> tuple[LinhaNormalizada, ...]:
+    """Uma linha 'iniciou' contabilizacao quando qualquer campo de
+    COLUNAS_CONTABILIZACAO deixou de estar ausente -- inclui campos
+    invalidos (ex. valorProvisao com texto malformado). Um campo invalido
+    e reportado pela etapa de normalizacao (BASE-NULO-001, via
+    detectar_ausencia_e_invalidez), mas isso nao cria um objeto
+    Contabilizacao em extrair_contabilizacoes -- so o campo *ausente* e
+    checado ali (BASE-CONT-OBR-001), nao o *invalido* isolado."""
+
+    return tuple(
+        linha
+        for linha in evento.linhas
+        if any(not linha.campos[nome].ausente for nome in COLUNAS_CONTABILIZACAO)
+    )
+
+
 def validar_provisao_avaliacao_im(evento: EventoAgrupado) -> Ocorrencia | None:
     """DRO001302: avaliação I ou M exige tratamento coerente da provisão.
 
-    Um evento exclusivamente de risco (DRO001452) e isento: nesse caso a
-    ausencia de contabilizacoes e exigida, nao um erro de provisao nao
-    informada. Fora desse caso, `not evento.contabilizacoes` e um proxy
-    correto para "nenhuma provisao informada": extrair_contabilizacoes so
-    cria uma Contabilizacao quando valorProvisao ja foi validado como
-    presente (senao gera BASE-CONT-OBR-001 e descarta a linha) -- entao
-    toda contabilizacao existente ja tem valorProvisao genuinamente
-    informado."""
+    Nao usa `evento.contabilizacoes` (lista ja filtrada por extrair_
+    contabilizacoes) como evidencia de provisao informada: uma linha pode
+    ter valorProvisao correto e ainda assim ser descartada por outro campo
+    obrigatorio ausente (ex. dataContabilizacao), o que geraria falso
+    positivo aqui. A decisao e tomada direto sobre as linhas normalizadas
+    do evento (`_linhas_com_contabilizacao_iniciada`). Chamada
+    separadamente por conversion.py, antes do curto-circuito de formato
+    (ver validar_evento)."""
 
     avaliacao = evento.valor_evento("tipoAvaliacao")
     if avaliacao not in ("I", "M"):
         return None
-    if evento.contabilizacoes or _evento_apenas_risco(evento):
+
+    linhas_contabeis = _linhas_com_contabilizacao_iniciada(evento)
+
+    if not linhas_contabeis:
+        if _evento_apenas_risco(evento):
+            return None
+        return _erro(
+            evento,
+            "DRO001302",
+            "Avaliação I/M exige tratamento coerente da provisão.",
+            "Nenhuma contabilização ou provisão foi informada no evento.",
+            ("tipoAvaliacao", "valorProvisao"),
+        )
+
+    linhas_com_provisao_incorreta = tuple(
+        linha.numero_linha
+        for linha in linhas_contabeis
+        if linha.campos["valorProvisao"].ausente
+        or linha.campos["valorProvisao"].invalido
+    )
+    if not linhas_com_provisao_incorreta:
         return None
-    return _erro(
-        evento,
-        "DRO001302",
-        "Avaliação I/M exige tratamento coerente da provisão.",
-        "Nenhum valorProvisao foi informado no evento.",
-        ("tipoAvaliacao", "valorProvisao"),
+
+    return Ocorrencia(
+        etapa=ETAPA_PRE_PROCESSAMENTO,
+        tipo=TIPO_ERRO_IMPEDITIVO,
+        codigo="DRO001302",
+        descricao="Avaliação I/M exige tratamento coerente da provisão.",
+        detalhe=(
+            "Existe contabilização iniciada com valorProvisao ausente "
+            "ou inválido."
+        ),
+        linhas=linhas_com_provisao_incorreta,
+        id_evento=evento.id_evento,
+        campos=("tipoAvaliacao", "valorProvisao"),
     )
 
 
@@ -749,7 +796,6 @@ REGRAS_UM_RESULTADO = (
     validar_limite_recuperacao,
     validar_natureza_para_risco,
     validar_descricao_materialidade,
-    validar_provisao_avaliacao_im,
     validar_composicao_risco_total,
     validar_probabilidade_obrigatoria_individual,
     validar_probabilidade_proibida_massificada,
@@ -771,7 +817,12 @@ def validar_evento(evento: EventoAgrupado) -> list[Ocorrencia]:
     DRO001103, verificadas uma vez para o documento inteiro em
     validar_unicidade_do_documento; exclui tambem DRO001321, DRO001401 e
     DRO001402, que precisam dos blocos globais de sistemas/contas e sao
-    chamadas explicitamente por conversion.py)."""
+    chamadas explicitamente por conversion.py).
+
+    A DRO001302 tambem NAO esta mais aqui: e executada separadamente por
+    conversion.py, antes do curto-circuito de formato, porque precisa
+    analisar diretamente as linhas normalizadas do evento (ver
+    validar_provisao_avaliacao_im)."""
 
     ocorrencias: list[Ocorrencia] = []
     for regra in REGRAS_UM_RESULTADO:
