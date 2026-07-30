@@ -123,7 +123,11 @@ def validar_pr_com_provisao_zero(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO000004",
-            "Probabilidade PR exige totalProvisao diferente de zero.",
+            (
+                "Contingências passivas, avaliadas individualmente, com "
+                "atribuição de perda provável e sem atribuição de "
+                "provisão."
+            ),
             "Há probabilidade PR com totalProvisao=0,00.",
             ("probabilidadePerda", "totalProvisao"),
         )
@@ -140,7 +144,11 @@ def validar_po_re_com_risco_zero(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO000005",
-            "Probabilidade PO/RE exige valorRisco diferente de zero.",
+            (
+                "Contingências passivas, avaliadas individualmente, com "
+                "atribuição de perda possível ou remorta e sem "
+                "atribuição do valor do risco da contingência."
+            ),
             f"Código(s) com valorRisco=0,00: {', '.join(p.codigo for p in zeradas)}.",
             ("probabilidadePerda", "valorRisco"),
         )
@@ -163,7 +171,11 @@ def validar_contingencia_individual_sem_probabilidade(
         return _erro(
             evento,
             "DRO000003",
-            "Contingência individual a partir de 2021 sem probabilidades.",
+            (
+                "Contingências passivas ocorridas após 01/01/2021, "
+                "avaliadas individualmente, sem detalhamento de "
+                "probabilidade de perda."
+            ),
             "Nenhuma probabilidade foi informada no evento.",
             ("probabilidadePerda",),
         )
@@ -195,8 +207,8 @@ def validar_primeira_contabilizacao_sem_categoria(
             evento,
             "DRO000009",
             (
-                "Primeira contabilização a partir de 2021 exige "
-                "categoriaNivel2."
+                "Eventos posteriores a 01/01/2021 sem atribuição do 2º "
+                "Nível de Classificação Basileia II."
             ),
             (
                 f"Primeira contabilização em {min(datas)} (dataOcorrencia "
@@ -225,7 +237,7 @@ def validar_contabilizacao_anterior_a_descoberta(
         return _erro(
             evento,
             "DRO000010",
-            "Contabilização anterior à descoberta.",
+            "Eventos com contabilizações anteriores à data de descoberta.",
             (
                 f"dataContabilizacao={min(c.data_contabilizacao for c in anteriores)} "
                 f"< dataDescoberta={descoberta}."
@@ -247,7 +259,7 @@ def validar_perda_minima(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO000011",
-            "totalPerdaEfetiva não pode ser menor que -10,00.",
+            "Eventos com valor total de perda efetiva com sinal negativo.",
             f"totalPerdaEfetiva={evento.total_perda_efetiva:.2f}.",
             ("totalPerdaEfetiva",),
         )
@@ -261,7 +273,7 @@ def validar_provisao_minima(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO000012",
-            "totalProvisao não pode ser menor que -10,00.",
+            "Eventos com valor total de provisão com sinal negativo.",
             f"totalProvisao={evento.total_provisao:.2f}.",
             ("totalProvisao",),
         )
@@ -275,7 +287,7 @@ def validar_recuperacao_maxima(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO000013",
-            "totalRecuperado não pode ser maior que zero.",
+            "Eventos com valor total recuperado com sinal positivo.",
             f"totalRecuperado={evento.total_recuperado:.2f}.",
             ("totalRecuperado",),
         )
@@ -295,8 +307,8 @@ def validar_recuperacao_dentro_do_limite(
             evento,
             "DRO000014",
             (
-                "Recuperação em módulo não pode superar perda mais "
-                "provisão."
+                "Eventos com valor total recuperado, em módulo, superior "
+                "ao valor da perda bruta."
             ),
             (
                 f"|totalRecuperado|={abs(evento.total_recuperado):.2f} > "
@@ -331,7 +343,11 @@ def validar_totais_batem_com_contabilizacoes(
         return _erro(
             evento,
             "DRO000015",
-            "Totais divergem da soma das contabilizações.",
+            (
+                "Inconsistência entre os totais de Perda Efetiva, "
+                "Provisão ou Valor Recuperado e a soma do bloco de "
+                "contabilizações."
+            ),
             (
                 f"Totais={evento.total_perda_efetiva:.2f}/"
                 f"{evento.total_provisao:.2f}/{evento.total_recuperado:.2f}, "
@@ -358,7 +374,10 @@ def validar_fraude_com_provisao(evento: EventoAgrupado) -> Ocorrencia | None:
     return _erro(
         evento,
         "DRO000032",
-        "Evento de fraude com provisão.",
+        (
+            "Eventos de fraude (categorias 1 e 2 do 1º Nível de "
+            "Classificação Basileia II) com provisão."
+        ),
         (
             f"categoriaNivel1={categoria!r} e "
             f"totalProvisao={evento.total_provisao:.2f}."
@@ -380,7 +399,10 @@ def validar_categorias_compativeis(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO000021",
-            "categoriaNivel1 e categoriaNivel2 incompatíveis.",
+            (
+                "Eventos com atribuição de 2º Nível de Classificação "
+                "Basileia II incondizente com 1º Nível"
+            ),
             f"categoriaNivel1={nivel1!r}, categoriaNivel2={nivel2!r}.",
             ("categoriaNivel1", "categoriaNivel2"),
         )
@@ -425,7 +447,10 @@ def validar_saldo_acumulado_perda(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO000023",
-            "Saldo acumulado de perda fica negativo.",
+            (
+                "Verifica a existência momentânea de saldo acumulado "
+                "negativo de Perda Efetiva, no bloco de contabilizações."
+            ),
             "O saldo acumulado de valorPerdaEfetiva por fechamento diário ficou negativo.",
             ("valorPerdaEfetiva", "dataContabilizacao"),
         )
@@ -439,7 +464,10 @@ def validar_saldo_acumulado_provisao(evento: EventoAgrupado) -> Ocorrencia | Non
         return _erro(
             evento,
             "DRO000024",
-            "Saldo acumulado de provisão fica negativo.",
+            (
+                "Verifica a existência momentânea de saldo acumulado "
+                "negativo de Provisão, no bloco de contabilizações."
+            ),
             "O saldo acumulado de valorProvisao por fechamento diário ficou negativo.",
             ("valorProvisao", "dataContabilizacao"),
             tipo=TIPO_AVISO,
@@ -560,7 +588,11 @@ def validar_media_semestral(
             etapa=ETAPA_POS_PROCESSAMENTO,
             tipo=TIPO_ERRO_IMPEDITIVO,
             codigo="DRO000001",
-            descricao="Média semestral consolidada maior que 1.000,00.",
+            descricao=(
+                "Verifica, em cada categoria do Bloco 2 - Eventos "
+                "Consolidados, se a perda bruta acumulada no semestre é, "
+                "em média, superior ao limite de R$ 1.000,00."
+            ),
             detalhe=(
                 f"categoriaNivel1={consolidado.categoria_nivel1!r}, "
                 f"média={media:.2f}."
@@ -587,7 +619,11 @@ def validar_media_total(consolidado: EventoConsolidado) -> Ocorrencia | None:
             etapa=ETAPA_POS_PROCESSAMENTO,
             tipo=TIPO_ERRO_IMPEDITIVO,
             codigo="DRO000002",
-            descricao="Média total consolidada maior que 1.000,00.",
+            descricao=(
+                "Verifica, em cada categoria do Bloco 2 - Eventos "
+                "Consolidados, se a perda bruta acumulada é, em média, "
+                "superior ao limite de R$ 1.000,00."
+            ),
             detalhe=(
                 f"categoriaNivel1={consolidado.categoria_nivel1!r}, "
                 f"média={media:.2f}."
@@ -611,7 +647,10 @@ def validar_perda_consolidada_minima(
             etapa=ETAPA_POS_PROCESSAMENTO,
             tipo=TIPO_ERRO_IMPEDITIVO,
             codigo="DRO000018",
-            descricao="Perda total consolidada menor que -10,00.",
+            descricao=(
+                "Verifica a existência de perda efetiva negativa em cada "
+                "categoria do Bloco 2 - Eventos Consolidados."
+            ),
             detalhe=(
                 f"categoriaNivel1={consolidado.categoria_nivel1!r}, "
                 f"perdaEfetivaTotalConsol={consolidado.perda_efetiva_total:.2f}."
@@ -631,7 +670,10 @@ def validar_provisao_consolidada_minima(
             etapa=ETAPA_POS_PROCESSAMENTO,
             tipo=TIPO_ERRO_IMPEDITIVO,
             codigo="DRO000019",
-            descricao="Provisão total consolidada menor que -10,00.",
+            descricao=(
+                "Verifica a existência de provisão negativa em cada "
+                "categoria do Bloco 2 - Eventos Consolidados."
+            ),
             detalhe=(
                 f"categoriaNivel1={consolidado.categoria_nivel1!r}, "
                 f"provisaoTotalConsol={consolidado.provisao_total:.2f}."

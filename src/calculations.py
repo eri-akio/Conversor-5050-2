@@ -534,7 +534,9 @@ def validar_contabilizacoes(
                     tipo=TIPO_ERRO_IMPEDITIVO,
                     codigo="DRO001411",
                     descricao=(
-                        "valorRecuperacao deve ser menor ou igual a zero."
+                        "Verifica se o valorRecuperacao é menor ou igual "
+                        "a zero. Por convenção, valores de recuperação "
+                        "devem ser lançados com sinal negativo."
                     ),
                     detalhe=(
                         "valorRecuperacao="
@@ -561,8 +563,10 @@ def validar_contabilizacoes(
                     tipo=TIPO_ERRO_IMPEDITIVO,
                     codigo="DRO001421",
                     descricao=(
-                        "Recuperação efetiva exige fonte S ou O a partir "
-                        "de 2021."
+                        "Verifica, quando a data de ocorrência for maior "
+                        "ou igual a 1.1.2021, se o campo fonteRecuperacao "
+                        "foi devidamene informado quando há lançamento "
+                        "referente a valor recuperado."
                     ),
                     detalhe=(
                         f"dataOcorrencia={data_ocorrencia}, "
@@ -617,8 +621,9 @@ def validar_provisao_avaliacao_na(
                     tipo=TIPO_ERRO_IMPEDITIVO,
                     codigo="DRO001301",
                     descricao=(
-                        "Avaliação NA não aceita provisão diferente de "
-                        "zero."
+                        'Para tipoAvaliação igual a "NA", valores de '
+                        "provisão (valorProvisao) não devem ser "
+                        "informados."
                     ),
                     detalhe=(
                         f"valorProvisao={contabilizacao.valor_provisao:.2f} "
@@ -726,20 +731,28 @@ def validar_sistemas_e_contas(
                     # pre-processamento): verifica, quando ha lancamento em
                     # contaCosifDebito/Credito, se o contaBalAnaliticoDebito/
                     # Credito correspondente foi preenchido.
-                    codigo_regra = (
-                        "DRO001443"
-                        if campo_conta == "contaBalAnaliticoDebito"
-                        else "DRO001444"
-                    )
+                    if campo_conta == "contaBalAnaliticoDebito":
+                        codigo_regra = "DRO001443"
+                        descricao_regra = (
+                            "Verifica, nos casos em que sejam devidos "
+                            "lançamentos no campo contaCosifDebito, se "
+                            "há preenchimento do campo "
+                            "contaBalAnaliticoDebito correspondente."
+                        )
+                    else:
+                        codigo_regra = "DRO001444"
+                        descricao_regra = (
+                            "Verifica, nos casos em que sejam devidos "
+                            "lançamentos no campo contaCosifCredito , se "
+                            "há preenchimento do campo "
+                            "contaBalAnaliticoCredito correspondente."
+                        )
                     ocorrencias.append(
                         Ocorrencia(
                             etapa=ETAPA_AGRUPAMENTO,
                             tipo=TIPO_ERRO_IMPEDITIVO,
                             codigo=codigo_regra,
-                            descricao=(
-                                f"{campo_cosif} preenchida exige "
-                                f"{campo_conta}."
-                            ),
+                            descricao=descricao_regra,
                             detalhe=(
                                 f"{campo_cosif}={valor_cosif!r} sem "
                                 f"{campo_conta}."

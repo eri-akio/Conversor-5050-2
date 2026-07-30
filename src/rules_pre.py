@@ -99,7 +99,10 @@ def validar_ordem_datas(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO001201",
-            "dataOcorrencia deve ser menor ou igual a dataDescoberta.",
+            (
+                "Verifica, quando informado, se a data de ocorrência é "
+                "menor ou igual a data de descoberta."
+            ),
             f"dataOcorrencia={ocorrencia_data} > dataDescoberta={descoberta}.",
             ("dataOcorrencia", "dataDescoberta"),
         )
@@ -116,7 +119,11 @@ def validar_descoberta_obrigatoria(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO001202",
-            "dataDescoberta obrigatória para ocorrência a partir de 2021.",
+            (
+                "Verifica se o campo dataDescoberta foi devidamente "
+                "informado para datas de ocorrência maiores ou iguais a "
+                "1.1.2021."
+            ),
             f"dataOcorrencia={ocorrencia_data}, dataDescoberta ausente.",
             ("dataDescoberta",),
         )
@@ -135,7 +142,11 @@ def validar_categoria_nivel2_obrigatoria(
         return _erro(
             evento,
             "DRO001212",
-            "categoriaNivel2 obrigatória para ocorrência a partir de 2021.",
+            (
+                "Verifica a obrigatoriedade de preenchimento da "
+                "categoriaNivel2 para eventos cuja data de ocorrência "
+                "forem maiores ou iguais a 1.1.2021 ."
+            ),
             f"dataOcorrencia={ocorrencia_data}, categoriaNivel2 ausente.",
             ("categoriaNivel2",),
         )
@@ -154,7 +165,11 @@ def validar_risco_associado_obrigatorio(
         return _erro(
             evento,
             "DRO001251",
-            "riscoAssociado obrigatório para ocorrência a partir de 2021.",
+            (
+                "Verifica, quando a data de ocorrência for maior ou igual "
+                "a 1.1.2021, se o campo riscoAssociado foi devidamente "
+                "preenchido."
+            ),
             f"dataOcorrencia={ocorrencia_data}, riscoAssociado ausente.",
             ("riscoAssociado",),
         )
@@ -174,8 +189,9 @@ def validar_ligado_risco_socioambiental_obrigatorio(
             evento,
             "DRO001252",
             (
-                "ligadoRiscoSocioAmbiental obrigatório para ocorrência a "
-                "partir de 2021."
+                "Verifica, quando a data de ocorrência for maior ou igual "
+                "a 1.1.2021, se o campo ligadoRiscoSocioAmbiental foi "
+                "devidamente preenchido."
             ),
             f"dataOcorrencia={ocorrencia_data}, campo ausente.",
             ("ligadoRiscoSocioAmbiental",),
@@ -196,8 +212,9 @@ def validar_ligado_risco_cibernetico_obrigatorio(
             evento,
             "DRO001253",
             (
-                "ligadoRiscoCibernetico obrigatório para ocorrência a "
-                "partir de 2021."
+                "Verifica, quando a data de ocorrência for maior ou igual "
+                "a 1.1.2021, se o campo ligadoRIscoCibernetico foi "
+                "devidamente preenchido."
             ),
             f"dataOcorrencia={ocorrencia_data}, campo ausente.",
             ("ligadoRiscoCibernetico",),
@@ -255,8 +272,9 @@ def validar_limite_recuperacao(evento: EventoAgrupado) -> Ocorrencia | None:
             evento,
             "DRO001232",
             (
-                "totalRecuperado não pode superar, em módulo, a soma de "
-                "perda e provisão."
+                "Verifica se o total recuperado (totalRecuperado ) é "
+                "menor ou igual ao somatório, em valores absolutos, dos "
+                "campos totalPerdaEfetiva e totalProvisao ."
             ),
             (
                 f"|totalRecuperado|={abs(evento.total_recuperado):.2f} > "
@@ -278,7 +296,9 @@ def validar_natureza_para_risco(evento: EventoAgrupado) -> Ocorrencia | None:
             evento,
             "DRO001233",
             (
-                "Risco informado exige natureza TRI, TRA ou CIV."
+                "Verifica, quando o campo valorTotalRisco é informado, se "
+                "há informação a respeito da natureza de contingência "
+                "(tributária, trabalhista e/ou cívil) ."
             ),
             f"valorTotalRisco={evento.valor_total_risco:.2f}, naturezaContingencia={natureza!r}.",
             ("valorTotalRisco", "naturezaContingencia"),
@@ -304,7 +324,13 @@ def validar_descricao_materialidade(evento: EventoAgrupado) -> Ocorrencia | None
         return _erro(
             evento,
             "DRO001241",
-            "Descrição obrigatória pela fórmula oficial de materialidade.",
+            (
+                "Verifica, quando a data de ocorrência for maior ou igual "
+                "a 1.1.2021 e para eventos cujo somatório do campo "
+                "totalPerda Efetiva com o campo valorTotalRisco for maior "
+                "ou igual a R$ 1 milhão, se o campo descricaoEvento foi "
+                "devidamente preenchido ."
+            ),
             f"valorMaterialidade={materialidade:.2f} >= 1.000.000,00.",
             ("descricaoEvento",),
         )
@@ -353,7 +379,11 @@ def validar_provisao_avaliacao_im(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO001302",
-            "Avaliação I/M exige tratamento coerente da provisão.",
+            (
+                'Verifica, caso tipoAvaliacao seja igual a "I" ou "M", se '
+                "valores para totalProvisao e/ou valorProvisao foram "
+                "devidamente informados."
+            ),
             "Nenhuma contabilização ou provisão foi informada no evento.",
             ("tipoAvaliacao", "valorProvisao"),
         )
@@ -371,7 +401,11 @@ def validar_provisao_avaliacao_im(evento: EventoAgrupado) -> Ocorrencia | None:
         etapa=ETAPA_PRE_PROCESSAMENTO,
         tipo=TIPO_ERRO_IMPEDITIVO,
         codigo="DRO001302",
-        descricao="Avaliação I/M exige tratamento coerente da provisão.",
+        descricao=(
+            'Verifica, caso tipoAvaliacao seja igual a "I" ou "M", se '
+            "valores para totalProvisao e/ou valorProvisao foram "
+            "devidamente informados."
+        ),
         detalhe=(
             "Existe contabilização iniciada com valorProvisao ausente "
             "ou inválido."
@@ -396,7 +430,12 @@ def validar_composicao_risco_total(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO001311",
-            "valorTotalRisco deve ser igual a totalProvisao + soma(valorRisco).",
+            (
+                "Verifica se o campo valorTotalRisco , quando informado "
+                "para um dado idEvento , corresponde ao somatório do "
+                "campo totalProvisao com todos os lançamento informados "
+                "nos campos valorRisco ."
+            ),
             f"valorTotalRisco={evento.valor_total_risco:.2f}, esperado={esperado:.2f}.",
             ("valorTotalRisco", "totalProvisao"),
         )
@@ -418,7 +457,11 @@ def validar_probabilidade_obrigatoria_individual(
         return _erro(
             evento,
             "DRO001312",
-            "Avaliação individual a partir de 2021 exige probabilidade.",
+            (
+                "Verifica, quando a data de ocorrência for maior ou igual "
+                'a 1.1.2021 e tipoAvaliacao igual a "I" (individual), se '
+                "o campo probabilidadePerda foi devidamente preenchido."
+            ),
             "Nenhuma probabilidade foi informada no evento.",
             ("probabilidadePerda",),
         )
@@ -436,7 +479,13 @@ def validar_probabilidade_proibida_massificada(
         return _erro(
             evento,
             "DRO001313",
-            "Avaliação massificada não aceita probabilidade.",
+            (
+                'Verifica, quando o tipoAvaliacao for igual a "M" '
+                "(massificada), a inexistência de informação no campo "
+                "probabilidade de perda (probabilidadePerda ). Conforme "
+                "definido, não deve ser informada probabilidade de perda "
+                "para eventos com tipo de avaliação massificada."
+            ),
             "tipoAvaliacao=M com probabilidade informada.",
             ("tipoAvaliacao", "probabilidadePerda"),
         )
@@ -461,7 +510,14 @@ def validar_soma_risco_positiva(evento: EventoAgrupado) -> Ocorrencia | None:
         return _erro(
             evento,
             "DRO001314",
-            "Soma dos valores de risco deve ser positiva no contexto aplicável.",
+            (
+                "Verifica se a soma dos campos valorRisco apresenta "
+                "resultado maior que zero para o seguinte contexto: a) a "
+                "data de ocorrência é maior ou igual a 1.1.2021; b) o "
+                'tipoAvaliacao é igual a "I" (Individualizada); c) a '
+                'naturezaContingencia é diferente de "NA"; e d) foi '
+                "informada probabilidadePerda ."
+            ),
             f"soma(valorRisco)={_soma_risco(evento):.2f}.",
             ("valorRisco",),
         )
@@ -494,7 +550,11 @@ def validar_sistema_referenciado(
         return _erro(
             evento,
             "DRO001321",
-            "Sistema do evento deve existir no bloco de sistemas.",
+            (
+                "Verifica se o código preenchido para identificação do "
+                "sistema origem (codigoSistemaOrigem ) está devidamente "
+                "informado no Bloco 3 - Tabela de Sistemas de Origem."
+            ),
             f"codSistemaOrigem={codigo!r} não encontrado no bloco de sistemas.",
             ("codSistemaOrigem",),
         )
@@ -521,7 +581,13 @@ def validar_contas_referenciadas(
                 _erro(
                     evento,
                     "DRO001401",
-                    "Conta interna de débito deve existir no bloco de contas.",
+                    (
+                        "Verifica, nos casos em que o campo "
+                        "contaBalAnaliticoDebito é informado, se a "
+                        "referida conta está devidamente informada no "
+                        "campo codigoConta do Bloco 4 - Tabela de "
+                        "Subtítulos de Nível Interno"
+                    ),
                     f"contaBalAnaliticoDebito={contabilizacao.conta_debito!r} não encontrada no bloco de contas.",
                     ("contaBalAnaliticoDebito",),
                 )
@@ -534,7 +600,13 @@ def validar_contas_referenciadas(
                 _erro(
                     evento,
                     "DRO001402",
-                    "Conta interna de crédito deve existir no bloco de contas.",
+                    (
+                        "Verifica, nos casos em que o campo "
+                        "contaBalAnaliticoCredito é informado, se a "
+                        "referida conta está devidamente informada no "
+                        "campo codigoConta do Bloco 4 - Tabela de "
+                        "Subtítulos de Nível Interno"
+                    ),
                     f"contaBalAnaliticoCredito={contabilizacao.conta_credito!r} não encontrada no bloco de contas.",
                     ("contaBalAnaliticoCredito",),
                 )
@@ -555,7 +627,12 @@ def validar_cosif_obrigatorio(evento: EventoAgrupado) -> list[Ocorrencia]:
                 _erro(
                     evento,
                     "DRO001441",
-                    "Conta interna de débito exige conta COSIF de débito.",
+                    (
+                        "Verifica, nos casos em que o campo "
+                        "contaBalAnaliticoDebito é informado, se há "
+                        "informação preenchida no campo contaCosifDebito "
+                        "correspondente ."
+                    ),
                     f"contaBalAnaliticoDebito={contabilizacao.conta_debito!r} sem COSIF.",
                     ("contaBalAnaliticoDebito", "contaCosifDebito"),
                 )
@@ -568,7 +645,12 @@ def validar_cosif_obrigatorio(evento: EventoAgrupado) -> list[Ocorrencia]:
                 _erro(
                     evento,
                     "DRO001442",
-                    "Conta interna de crédito exige conta COSIF de crédito.",
+                    (
+                        "Verifica, nos casos em que o campo "
+                        "contaBalAnaliticoCredito é informado, se há "
+                        "informação preenchida no campo contaCosifCredito "
+                        "correspondente ."
+                    ),
                     f"contaBalAnaliticoCredito={contabilizacao.conta_credito!r} sem COSIF.",
                     ("contaBalAnaliticoCredito", "contaCosifCredito"),
                 )
@@ -590,7 +672,11 @@ def validar_conta_cosif_debito(evento: EventoAgrupado) -> list[Ocorrencia]:
                 _erro(
                     evento,
                     "DRO001431",
-                    "Conta COSIF de débito deve existir no cadastro oficial COSIF.",
+                    (
+                        "Verifica, nos casos em que sejam devidos "
+                        "lançamentos no campo contaCosifDebito , se foi "
+                        "informada uma conta Cosif válida"
+                    ),
                     f"contaCosifDebito={contabilizacao.conta_cosif_debito!r} não encontrada no cadastro COSIF.",
                     ("contaCosifDebito",),
                 )
@@ -612,7 +698,11 @@ def validar_conta_cosif_credito(evento: EventoAgrupado) -> list[Ocorrencia]:
                 _erro(
                     evento,
                     "DRO001432",
-                    "Conta COSIF de crédito deve existir no cadastro oficial COSIF.",
+                    (
+                        "Verifica, nos casos em que sejam devidos "
+                        "lançamentos no campo contaCosifCredito , se foi "
+                        "informada uma conta Cosif válida."
+                    ),
                     f"contaCosifCredito={contabilizacao.conta_cosif_credito!r} não encontrada no cadastro COSIF.",
                     ("contaCosifCredito",),
                 )
@@ -678,8 +768,12 @@ def validar_campos_contabeis_quando_ha_movimento(
                 evento,
                 "DRO001451",
                 (
-                    "Evento não exclusivamente de risco exige campos "
-                    "contábeis."
+                    "Verifica, para os casos que não se referem apenas a "
+                    "lançamentos de risco, se foram devidamente "
+                    "preenchidos os respectivos campos contábeis. "
+                    "Lançamentos que não sejam exclusivamente de risco "
+                    "têm que ter informações relativas às contas "
+                    "contábeis correspondentes."
                 ),
                 "Há totais de perda/provisão/recuperação sem contabilização registrada.",
                 ("valorPerdaEfetiva", "valorProvisao", "valorRecuperacao"),
@@ -709,8 +803,12 @@ def validar_campos_contabeis_quando_ha_movimento(
                     tipo=TIPO_ERRO_IMPEDITIVO,
                     codigo="DRO001451",
                     descricao=(
-                        "Contabilização com movimento sem os pares "
-                        "completos de conta contábil."
+                        "Verifica, para os casos que não se referem "
+                        "apenas a lançamentos de risco, se foram "
+                        "devidamente preenchidos os respectivos campos "
+                        "contábeis. Lançamentos que não sejam "
+                        "exclusivamente de risco têm que ter informações "
+                        "relativas às contas contábeis correspondentes."
                     ),
                     detalhe=(
                         f"valorPerdaEfetiva={contabilizacao.valor_perda_efetiva:.2f}, "
@@ -745,8 +843,13 @@ def validar_evento_apenas_risco(evento: EventoAgrupado) -> Ocorrencia | None:
             evento,
             "DRO001452",
             (
-                "Evento exclusivamente de risco não deve ter "
-                "contabilização."
+                "Verifica a inexistência de informação nos campos de "
+                "informações contábeis, por indevida, nos casos de um "
+                "idEvento que contenha lançamentos relativos apenas a "
+                "risco. Ou seja, não é devida a informação de conta "
+                "contábil nos casos de um contexto de informações "
+                'exclusivas a valores em risco. O bloco XML "contabilizacao" '
+                "não deve ser informado."
             ),
             (
                 f"soma(valorRisco)={_soma_risco(evento):.2f} com "
@@ -1195,7 +1298,7 @@ def validar_codigo_conglomerado_unicad(
         return None
     return _erro_cabecalho(
         "DRO001001",
-        "Código do conglomerado prudencial não encontrado no cadastro UNICAD.",
+        "Verifica se o código do conglomerado prudencial existe no Unicad.",
         f"codigoConglomerado={valor!r} não encontrado no cadastro local do UNICAD.",
         ("codigoConglomerado",),
     )
