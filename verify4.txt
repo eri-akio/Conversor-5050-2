@@ -1,0 +1,6 @@
+B -> [(1, 'idEvento'), (2, 'Obrigatório'), (3, 'Até 40 caracteres alfanuméricos')]
+H -> [(1, 'dataOcorrencia'), (2, 'Sempre obrigatório'), (3, 'Formato AAAA-MM-DD (ex.: 2025-06-10)')]
+J -> [(1, 'codSistemaOrigem'), (2, 'Obrigatório'), (3, 'Até 10 caracteres alfanuméricos; deve constar na tabela de Sistemas de Origem'), (4, 'Exemplo: SIS000001')]
+L -> [(1, 'codigoEventoOrigem'), (2, 'Obrigatório'), (3, 'Até 73 caracteres alfanuméricos; usar "MANUAL" quando o preenchimento for manual')]
+R -> [(1, 'idBacen'), (2, 'Obrigatório'), (3, '"Z" + 7 dígitos, ou "I" + 5 dígitos (dependências no exterior)'), (4, 'Exemplo: Z1234567')]
+U -> [(1, 'dataContabilizacao'), (2, 'Obrigatório quando houver contabilização (perda, provisão ou recuperação) para o evento'), (3, 'Formato AAAA-MM-DD (ex.: 2025-06-15)')]

@@ -1,0 +1,48 @@
+B -> [(1, 'idEvento'), (2, 'Obrigatório'), (3, 'Até 40 caracteres')]
+
+C -> [(1, 'categoriaNivel1'), (2, '1 - Fraudes internas'), (3, '2 - Fraudes externas'), (4, '3 - Demandas trabalhistas e segurança deficiente do local de trabalho'), (5, '4 - Práticas inadequadas relativas a clientes, produtos e serviços'), (6, '5 - Danos a ativos físicos próprios ou em uso pela instituição'), (7, '6 - Situações que acarretem a interrupção das atividades da instituição'), (8, '7 - Falhas em sistemas, processos ou infraestrutura de tecnologia da informação'), (9, '8 - Falhas na execução, no cumprimento de prazos ou no gerenciamento das atividades da instituição')]
+
+E -> [(1, 'tipoAvaliacao'), (2, 'I - Individual'), (3, 'IE - Individual Encerrado'), (4, 'M - Massificada'), (5, 'ME - Massificada Encerrada'), (6, 'NA - não se aplica')]
+
+F -> [(1, 'unidadeNegocio'), (2, '1 - Varejo'), (3, '2 - Comercial'), (4, '3 - Finanças corporativas'), (5, '4 - Negociação e vendas'), (6, '5 - Pagamentos e liquidações'), (7, '6 - Serviços de agente financeiro'), (8, '7 - Administração de ativos'), (9, '8 - Corretagem de varejo')]
+
+G -> [(1, 'dataDescoberta'), (2, 'Obrigatório apenas para eventos com dataOcorrencia a partir de 01/01/2021'), (3, 'Formatos aceitos: AAAA-MM-DD (ex.: 2025-06-10) ou DD/MM/AAAA (ex.: 10/06/2025)')]
+
+H -> [(1, 'dataOcorrencia'), (2, 'Obrigatório'), (3, 'Formatos aceitos: AAAA-MM-DD (ex.: 2025-06-10) ou DD/MM/AAAA (ex.: 10/06/2025)')]
+
+I -> [(1, 'naturezaContingencia'), (2, 'TRI - Tributária'), (3, 'TRA - Trabalhista'), (4, 'CIV - Cível'), (5, 'OUT -  Outras contingências'), (6, 'NA - Não se aplica')]
+
+J -> [(1, 'codSistemaOrigem'), (2, 'Obrigatório'), (3, 'Até 10 caracteres'), (4, 'Exemplo: SIS000001')]
+
+K -> [(1, 'nomeSistema'), (2, 'Obrigatório'), (3, 'Até 70 caracteres')]
+
+L -> [(1, 'codigoEventoOrigem'), (2, 'Obrigatório'), (3, 'Até 73 caracteres; usar "MANUAL" quando o preenchimento for manual')]
+
+R -> [(1, 'idBacen'), (2, 'Obrigatório'), (3, '"Z" + 7 dígitos'), (4, 'Exemplo: Z1234567')]
+
+S -> [(1, 'probabilidadePerda'), (2, 'PR - Provável'), (3, 'PO - Possível'), (4, 'RE - Remota')]
+
+T -> [(1, 'valorRisco'), (2, 'Obrigatório quando probabilidadePerda estiver preenchido'), (3, 'Decimal positivo, até 2 casas decimais (ex.: 10000000.00)')]
+
+U -> [(1, 'dataContabilizacao'), (2, 'Obrigatório quando houver contabilização (perda, provisão ou recuperação) para o evento'), (3, 'Formatos aceitos: AAAA-MM-DD (ex.: 2025-06-10) ou DD/MM/AAAA (ex.: 10/06/2025)')]
+
+V -> [(1, 'contaBalAnaliticoDebito'), (2, 'Junto com contaCosifDebito, obrigatório se o lado débito for informado (DRO001441). Havendo movimento contábil na linha, ao menos um par completo (débito OU crédito) é exigido (DRO001451). Se o evento for exclusivamente de risco, deixar em branco (DRO001452)'), (3, '1 a 24 dígitos numéricos; deve constar na Tabela de Subtítulos de Nível Interno')]
+
+W -> [(1, 'nomeContaDebito'), (2, 'Obrigatório quando contaBalAnaliticoDebito for preenchida'), (3, 'Até 70 caracteres')]
+
+X -> [(1, 'contaBalAnaliticoCredito'), (2, 'Junto com contaCosifCredito, obrigatório se o lado crédito for informado (DRO001442). Havendo movimento contábil na linha, ao menos um par completo (débito OU crédito) é exigido (DRO001451). Se o evento for exclusivamente de risco, deixar em branco (DRO001452)'), (3, '1 a 24 dígitos numéricos; deve constar na Tabela de Subtítulos de Nível Interno')]
+
+Y -> [(1, 'nomeContaCredito'), (2, 'Obrigatório quando contaBalAnaliticoCredito for preenchida'), (3, 'Até 70 caracteres')]
+
+Z -> [(1, 'contaCosifDebito'), (2, 'Obrigatório junto com contaBalAnaliticoDebito (DRO001441); deve existir no cadastro oficial COSIF (DRO001431)'), (3, '8 ou 10 dígitos numéricos')]
+
+AA -> [(1, 'contaCosifCredito'), (2, 'Obrigatório junto com contaBalAnaliticoCredito (DRO001442); deve existir no cadastro oficial COSIF (DRO001432)'), (3, '8 ou 10 dígitos numéricos')]
+
+AB -> [(1, 'valorPerdaEfetiva'), (2, 'Obrigatório; usar zero quando não houver perda efetiva'), (3, 'Decimal, sempre positivo, até 2 casas decimais (ex.: 1000.00)')]
+
+AC -> [(1, 'valorProvisao'), (2, 'Obrigatório para contingências passivas (tipoAvaliacao I, IE, M ou ME); usar zero quando não requerida ou tipoAvaliacao=NA'), (3, 'Decimal, sempre positivo, até 2 casas decimais (ex.: 500.00)')]
+
+AD -> [(1, 'valorRecuperacao'), (2, 'Obrigatório quando houver recuperação da perda'), (3, 'Decimal, sempre negativo, até 2 casas decimais (ex.: -100.00)')]
+
+AE -> [(1, 'fonteRecuperacao'), (2, 'S - Recuperação por meio de seguro'), (3, 'O - Recuperação por outras formas'), (4, 'NA - Não se aplica')]
+

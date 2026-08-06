@@ -1,0 +1,70 @@
+dims: A1:AE23
+
+--- coluna D (categoriaNivel2) ---
+D2: 'Obrigatório apenas para eventos com dataOcorrencia a partir de 01/01/2021 (DRO001212)'
+D3: '11 - Atividade não autorizada'
+D4: '12 - Roubo e fraude (origem interna)'
+D5: '21 - Roubo e fraude (origem externa)'
+D6: '22 - Segurança de sistemas'
+D7: '31 - Relações de trabalho'
+D8: '32 - Segurança do local de trabalho'
+D9: '33 - Diversidade e discriminação'
+D10: '41 - Adequação de produto a cliente, divulgação de informações sobre produtos e serviços, desrespeito ao dever fiduciário'
+D11: '42 - Práticas impróprias de negócios e em mercados'
+D12: '43 - Falhas no produto'
+D13: '44 - Seleção, patrocínio e exposição'
+D14: '45 - Atividades de assessoramento'
+D15: '51 - Desastres e outros eventos'
+D16: '61 - Interrupção de atividades'
+D17: '71 - Falhas em sistemas, processos ou infraestrutura de TI'
+D18: '81 - Captura, execução e manutenção de transações'
+D19: '82 - Monitoramento e reporte'
+D20: '83 - Aquisição de clientes e documentação'
+D21: '84 - Gestão de contas correntes e de não correntistas'
+D22: '85 - Contrapartes em transações'
+D23: '86 - Representantes e fornecedores'
+
+--- coluna M (descricaoEvento) ---
+M2: 'Obrigatório quando totalPerdaEfetiva + valorTotalRisco for igual ou maior que R$ 1.000.000,00, para eventos com dataOcorrencia a partir de 01/01/2021 (DRO001241)'
+M3: 'Até 200 caracteres'
+
+--- coluna N (riscoAssociado) ---
+N2: 'Obrigatório apenas para eventos com dataOcorrencia a partir de 01/01/2021 (DRO001251)'
+N3: 'C - Fronteira com risco de crédito'
+N4: 'M - Fronteira com risco de mercado'
+N5: 'NA - Não se aplica'
+
+--- coluna O (ligacaoRiscoSocioambiental) ---
+O2: 'Obrigatório apenas para eventos com dataOcorrencia a partir de 01/01/2021 (DRO001252)'
+O3: 'S - Ligado a risco social, ambiental ou climático'
+O4: 'N - Não ligado a risco social, ambiental ou climático'
+
+--- coluna P (ligadoRiscoCibernetico) ---
+P2: 'Obrigatório apenas para eventos com dataOcorrencia a partir de 01/01/2021 (DRO001253)'
+P3: 'S - Ligado a risco cibernético'
+P4: 'N - Não ligado a risco cibernético'
+
+--- coluna V (contaBalAnaliticoDebito) ---
+V2: 'Junto com contaCosifDebito, obrigatório se o lado débito for informado (DRO001441). Havendo movimento contábil na linha, ao menos um par completo (débito OU crédito) é exigido (DRO001451). Se o evento for exclusivamente de risco, deixar em branco (DRO001452)'
+V3: '1 a 24 dígitos numéricos; deve constar na Tabela de Subtítulos de Nível Interno'
+
+--- coluna W (nomeContaDebito) ---
+W2: 'Obrigatório quando contaBalAnaliticoDebito for preenchida'
+W3: 'Até 70 caracteres'
+
+--- coluna X (contaBalAnaliticoCredito) ---
+X2: 'Junto com contaCosifCredito, obrigatório se o lado crédito for informado (DRO001442). Havendo movimento contábil na linha, ao menos um par completo (débito OU crédito) é exigido (DRO001451). Se o evento for exclusivamente de risco, deixar em branco (DRO001452)'
+X3: '1 a 24 dígitos numéricos; deve constar na Tabela de Subtítulos de Nível Interno'
+
+--- coluna Y (nomeContaCredito) ---
+Y2: 'Obrigatório quando contaBalAnaliticoCredito for preenchida'
+Y3: 'Até 70 caracteres'
+
+--- coluna Z (contaCosifDebito) ---
+Z2: 'Obrigatório junto com contaBalAnaliticoDebito (DRO001441); deve existir no cadastro oficial COSIF (DRO001431)'
+Z3: '8 ou 10 dígitos numéricos'
+
+--- coluna AA (contaCosifCredito) ---
+AA2: 'Obrigatório junto com contaBalAnaliticoCredito (DRO001442); deve existir no cadastro oficial COSIF (DRO001432)'
+AA3: '8 ou 10 dígitos numéricos'
+

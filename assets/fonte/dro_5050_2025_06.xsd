@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- +  BANCO CENTRAL DO BRASIL                                           + -->
+<!-- +  Informações de Riscos Operacionais                                + -->
+<!-- +  Documento 5050 - definicao xml schema                             + -->
+<!-- +  Versao 1.01                                                       + -->
+<!-- +  Leiautes por data-base: 12/2020 e seguintes                       + -->
+<!-- +  Atualizado em 15/06/2021                                          + -->
+<!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+<!-- ********************************** -->
+<!-- Definicao para o Documento         -->
+<!-- ********************************** -->
+
+<xs:element name="documento" type="documento"/>
+<xs:complexType name="documento">
+	<xs:all>                                                                          
+		<xs:element ref="eventosIndividualizados" minOccurs="1" maxOccurs="1"/>
+		<xs:element ref="eventosConsolidados" minOccurs="1" maxOccurs="1"/>
+		<xs:element ref="sistemasOrigem" minOccurs="1" maxOccurs="1"/>
+		<xs:element ref="contasSubtitulosInternos" minOccurs="1" maxOccurs="1"/>
+	</xs:all>
+	<xs:attribute ref="codigoDocumento" use="required"/>
+	<xs:attribute ref="dataBase" use="required"/> 
+	<xs:attribute ref="codigoConglomerado" use="required"/> 	
+	<xs:attribute ref="cnpj" use="required"/>
+	<xs:attribute ref="tipoRemessa" use="required"/>                            
+	<xs:attribute ref="opcaoPorProvisaoAcumulada" use="required"/>                            
+</xs:complexType>
+
+<xs:attribute name="codigoDocumento" type="tipoCodigoDocumento"/>
+<xs:simpleType name="tipoCodigoDocumento">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="5050"/>                            
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="dataBase" type="tipoDataMesAno"/>
+<xs:simpleType name="tipoDataMesAno">
+	<xs:restriction base="xs:gYearMonth">
+		<xs:minInclusive value="2020-12"/>                                    
+	</xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="codigoConglomerado" type="tipoCodigoConglomerado"/>
+<xs:simpleType name="tipoCodigoConglomerado">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="C[0-9][0-9][0-9][0-9][0-9][0-9][0-9]" />
+		<xs:minLength value="8" />
+		<xs:maxLength value="8" />
+	</xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="cnpj" type="tipoCNPJ"/>
+<xs:simpleType name="tipoCNPJ">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="[0-9]{8}"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="tipoRemessa" type="tpRemessa"/>
+<xs:simpleType name="tpRemessa">
+  <xs:restriction base="xs:string">
+	<xs:whiteSpace value="collapse" />
+	<xs:enumeration value="I"/>
+	<xs:enumeration value="S"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="opcaoPorProvisaoAcumulada" type="tipoSimNao"/>  
+
+<!-- ********************************** -->
+<!-- Eventos Individualizados           -->
+<!-- ********************************** -->
+
+<xs:element name="eventosIndividualizados" type="tipoEventosIndividualizados" >
+</xs:element>
+
+<xs:complexType name="tipoEventosIndividualizados">
+	<xs:sequence>
+		<xs:element ref="evento" minOccurs="1" maxOccurs="unbounded"/>
+	</xs:sequence>
+</xs:complexType>
+
+<xs:element name="evento" type="tipoEvento"/>  
+                                              
+<xs:complexType name="tipoEvento">
+	<xs:sequence>
+		<xs:element ref="probabilidadesPerdas" minOccurs="0" maxOccurs="1"/>
+		<xs:element ref="contabilizacoes" minOccurs="0" maxOccurs="1"/>
+	</xs:sequence>
+	<xs:attribute ref="idEvento" use="required"/>
+	<xs:attribute ref="categoriaNivel1" use="required"/>
+	<xs:attribute ref="categoriaNivel2" use="optional"/>
+	<xs:attribute ref="tipoAvaliacao" use="required"/>
+	<xs:attribute ref="unidadeNegocio" use="required"/>
+	<xs:attribute ref="dataDescoberta" use="optional"/>                       
+	<xs:attribute ref="dataOcorrencia" use="required"/>
+	<xs:attribute ref="totalPerdaEfetiva" use="required"/>
+	<xs:attribute ref="totalProvisao" use="optional"/>                       
+	<xs:attribute ref="totalRecuperado" use="required"/> 
+	<xs:attribute ref="valorTotalRisco" use="optional"/>
+	<xs:attribute ref="naturezaContingencia" use="required"/>  
+	<xs:attribute ref="codSistemaOrigem" use="required"/>                       
+	<xs:attribute ref="codigoEventoOrigem" use="required"/> 
+	<xs:attribute ref="descricaoEvento" use="optional"/>
+	<xs:attribute ref="riscoAssociado" use="optional"/>
+	<xs:attribute ref="ligadoRiscoSocioAmbiental" use="optional"/>                       
+	<xs:attribute ref="ligadoRiscoCibernetico" use="optional"/> 
+	<xs:attribute ref="negocioDescontinuado" use="optional"/>
+	<xs:attribute ref="idBacen" use="required"/>	 
+</xs:complexType>
+
+<xs:attribute name="idEvento" type="tipoIdEvento"/>
+<xs:simpleType name="tipoIdEvento">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="([0-9]|[a-z]|[A-Z])+"/>                                    
+		<xs:minLength value="1"/>
+		<xs:maxLength value="40"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="categoriaNivel1" type="tipoCategoriaNivel1"/>
+<xs:attribute name="categoriaNivel2" type="tipoCategoriaNivel2"/>
+
+<xs:attribute name="tipoAvaliacao" type="tpTipoAvaliacao"/>
+<xs:simpleType name="tpTipoAvaliacao">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="I|M|NA"/>                            
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="unidadeNegocio" type="tipoUnidadeNegocio"/>
+<xs:simpleType name="tipoUnidadeNegocio">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="[1-8]{1}"/>                                         
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="dataDescoberta" type="tipoData"/>                       
+<xs:attribute name="dataOcorrencia" type="tipoData"/>
+<xs:attribute name="totalPerdaEfetiva" type="tipoDecimal"/>
+<xs:attribute name="totalProvisao" type="tipoDecimal"/>                       
+<xs:attribute name="totalRecuperado" type="tipoDecimal"/>
+<xs:attribute name="valorTotalRisco" type="tipoDecimal"/>
+
+<xs:attribute name="naturezaContingencia" type="tipoNaturezaContingencia"/>  
+<xs:simpleType name="tipoNaturezaContingencia">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="TRI|TRA|CIV|NA"/>                            
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="codSistemaOrigem" type="tipoAlphaNumerico10"/> 
+
+<xs:attribute name="codigoEventoOrigem" type="tipoCodigoEventoOrigem"/> 
+<xs:simpleType name="tipoCodigoEventoOrigem">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="([0-9]|[a-zA-Z])+"/>                                    
+		<xs:minLength value="1"/>
+		<xs:maxLength value="73"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="descricaoEvento" type="tipoDescricaoEvento"/>
+<xs:simpleType name="tipoDescricaoEvento">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:maxLength value="200"/>                                    
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="riscoAssociado" type="tipoRiscoAssociado"/>
+<xs:simpleType name="tipoRiscoAssociado">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="M|C|NA"/>                            
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="ligadoRiscoSocioAmbiental" type="tipoSimNao"/>                     
+<xs:attribute name="ligadoRiscoCibernetico" type="tipoSimNao"/>                                 
+<xs:attribute name="negocioDescontinuado" type="tipoSimNao"/>
+
+<xs:attribute name="idBacen" type="tipoIdBacen"/> 
+<xs:simpleType name="tipoIdBacen">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="(Z|z)[0-9]{7}|(I|i)[0-9]{5}"/>                                              
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:element name="probabilidadesPerdas" type="tipoProbabilidadesPerdas"/>
+<xs:complexType name="tipoProbabilidadesPerdas">
+	<xs:sequence>
+		<xs:element ref="probabilidadePerda" minOccurs="0" maxOccurs="3"/>
+	</xs:sequence>
+</xs:complexType>
+
+<xs:element name="probabilidadePerda" type="tipoProbabilidadePerda"/>
+<xs:complexType name="tipoProbabilidadePerda">
+	<xs:attribute ref="probabilidade" use="required"/>
+	<xs:attribute ref="valorRisco" use="required"/> 
+</xs:complexType>
+
+<xs:attribute name="probabilidade" type="tipoProbabilidade"/>
+<xs:simpleType name="tipoProbabilidade">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="PR|PO|RE"/>                            
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:attribute name="valorRisco" type="tipoDecimal"/> 
+
+<xs:element name="contabilizacoes" type="tipoContabilizacoes"/>
+<xs:complexType name="tipoContabilizacoes">
+	<xs:sequence>
+		<xs:element ref="contabilizacao" minOccurs="1" maxOccurs="unbounded"/>
+	</xs:sequence>
+</xs:complexType>
+
+<xs:element name="contabilizacao" type="tipoContabilizacao"/>
+<xs:complexType name="tipoContabilizacao">
+	<xs:attribute ref="dataContabilizacao" use="required"/>
+	<xs:attribute ref="contaBalAnaliticoDebito" use="optional"/>
+	<xs:attribute ref="contaBalAnaliticoCredito" use="optional"/>
+	<xs:attribute ref="contaCosifDebito" use="optional"/>
+	<xs:attribute ref="contaCosifCredito" use="optional"/>                       
+	<xs:attribute ref="valorPerdaEfetiva" use="required"/> 
+	<xs:attribute ref="valorProvisao" use="optional"/> 
+	<xs:attribute ref="valorRecuperacao" use="optional"/> 
+	<xs:attribute ref="fonteRecuperacao" use="optional"/>
+</xs:complexType>
+
+<xs:attribute name="dataContabilizacao" type="tipoData"/>
+<xs:attribute name="contaBalAnaliticoDebito" type="tipoContaBalAnalitico"/>
+<xs:attribute name="contaBalAnaliticoCredito" type="tipoContaBalAnalitico"/>
+<xs:attribute name="contaCosifDebito" type="tipoContaCosif"/>
+<xs:attribute name="contaCosifCredito" type="tipoContaCosif"/>                       
+<xs:attribute name="valorPerdaEfetiva" type="tipoDecimal"/> 
+<xs:attribute name="valorProvisao" type="tipoDecimal"/> 
+<xs:attribute name="valorRecuperacao" type="tipoDecimal"/>
+<xs:attribute name="fonteRecuperacao" type="tipoFonteRecuperacao"/>
+
+<xs:simpleType name="tipoFonteRecuperacao">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="S|O|NA"/>
+  </xs:restriction>
+</xs:simpleType> 
+
+<!-- ********************************** -->
+<!-- Eventos consolidados               -->
+<!-- ********************************** -->
+
+<xs:element name="eventosConsolidados" type="tipoEventosConsolidados" >
+	<xs:key name="pkcategoriaNivel1">											
+		<xs:selector xpath="eventoConsolidado"/>
+		<xs:field xpath="@categoriaNivel1Consol"/>
+	</xs:key>
+</xs:element>
+
+<xs:complexType name="tipoEventosConsolidados">
+	<xs:sequence>
+		<xs:element ref="eventoConsolidado" minOccurs="1" maxOccurs="8"/>
+	</xs:sequence>
+</xs:complexType>
+
+<xs:element name="eventoConsolidado" type="tipoEventoConsolidado"/>
+<xs:complexType name="tipoEventoConsolidado">
+	<xs:attribute ref="categoriaNivel1Consol" use="required"/>
+	<xs:attribute ref="numEventosTotalConsol" use="required"/>
+	<xs:attribute ref="numEventosSemestreConsol" use="required"/>
+	<xs:attribute ref="perdaEfetivaTotalConsol" use="required"/>                      
+	<xs:attribute ref="perdaEfetivaSemestreConsol" use="required"/>
+	<xs:attribute ref="provisaoTotalConsol" use="required"/>
+	<xs:attribute ref="provisaoSemestreConsol" use="required"/>
+</xs:complexType>
+
+<xs:attribute name="categoriaNivel1Consol" type="tipoCategoriaNivel1"/>
+<xs:attribute name="numEventosTotalConsol" type="tipoNumerico18"/>              
+<xs:attribute name="numEventosSemestreConsol" type="tipoNumerico18"/>              
+<xs:attribute name="perdaEfetivaTotalConsol" type="tipoDecimal"/>              
+<xs:attribute name="perdaEfetivaSemestreConsol" type="tipoDecimal"/>
+<xs:attribute name="provisaoTotalConsol" type="tipoDecimal"/>
+<xs:attribute name="provisaoSemestreConsol" type="tipoDecimal"/>
+
+<!-- ********************************** -->
+<!-- Sistemas de origem                 -->
+<!-- ********************************** -->
+
+<xs:element name="sistemasOrigem" type="tipoSistemasOrigem" >
+	<xs:key name="pkcodigoSistema">										
+		<xs:selector xpath="codigoSistema"/>
+		<xs:field xpath="@codigoSistema"/>
+	</xs:key>
+</xs:element>
+
+<xs:complexType name="tipoSistemasOrigem">
+	<xs:sequence>
+		<xs:element ref="sistema" minOccurs="1" maxOccurs="unbounded"/>
+	</xs:sequence>
+</xs:complexType>
+
+<xs:element name="sistema" type="tipoSistema"/>
+<xs:complexType name="tipoSistema">
+	<xs:attribute ref="codigoSistema" use="required"/>                   
+	<xs:attribute ref="nomeSistema" use="required"/>                       
+</xs:complexType>
+
+<xs:attribute name="codigoSistema" type="tipoAlphaNumerico10"/>
+<xs:attribute name="nomeSistema" type="tipoAlphaNumerico70"/>
+
+<!-- ************************************ -->
+<!-- Contas de subtitulo de nivel interno -->
+<!-- ************************************ -->
+
+<xs:element name="contasSubtitulosInternos" type="tipoContasSubtitulosInternos" >
+	<xs:key name="pkcodigoConta">										
+		<xs:selector xpath="codigoConta"/>
+		<xs:field xpath="@codigoConta"/>
+	</xs:key>
+</xs:element>
+
+<xs:complexType name="tipoContasSubtitulosInternos">
+	<xs:sequence>
+		<xs:element ref="conta" minOccurs="1" maxOccurs="unbounded"/>
+	</xs:sequence>
+</xs:complexType>
+
+<xs:element name="conta" type="tipoConta"/>
+<xs:complexType name="tipoConta">
+	<xs:attribute ref="codigoConta" use="required"/>                   
+	<xs:attribute ref="nomeConta" use="required"/>                       
+</xs:complexType>
+
+<xs:attribute name="codigoConta" type="tipoContaBalAnalitico"/>
+<xs:attribute name="nomeConta" type="tipoAlphaNumerico70"/>
+
+<!-- ********************************** -->
+<!-- Tipos genéricos                    -->
+<!-- ********************************** -->
+
+<xs:simpleType name="tipoAlphaNumerico10">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="([0-9a-zA-Z])+"/>                                    
+		<xs:minLength value="1"/>
+		<xs:maxLength value="10"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoAlphaNumerico70">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="([0-9a-zA-Z ])+"/>                                    
+		<xs:minLength value="1"/>
+		<xs:maxLength value="70"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoDecimal">
+	<xs:restriction base="xs:decimal">
+		<xs:pattern value="-?\d{1,16}\.\d{2}"/>                                 
+	</xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoNumerico18">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="[0-9]{1,18}"/>                                             
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoSimNao">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="S|N"/>                            
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoData">
+	<xs:restriction base="xs:date"/>
+</xs:simpleType>
+
+<xs:simpleType name="tipoCategoriaNivel1">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="[1-8]{1}"/>                                         
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoCategoriaNivel2">
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="(11|12|21|22|31|32|33|41|42|43|44|45|51|61|71|81|82|83|84|85|86)"/>                                         
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoContaBalAnalitico">          
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="[0-9]{1,24}"/>	
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="tipoContaCosif">                   
+	<xs:restriction base="xs:string">
+		<xs:whiteSpace value="collapse"/>
+		<xs:pattern value="[0-9]{8}|[0-9]{10}"/>                                         
+  </xs:restriction>
+</xs:simpleType>
+
+</xs:schema>
