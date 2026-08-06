@@ -1,29 +1,16 @@
-"""Construcao do XML e validacao contra o XSD 06/2025 (Fase 7).
+"""Construcao, serializacao e gravacao do XML DRO 5050 (Fase 7).
 
 Ver docs/plano_conversor_dro_5050_simples.md secao 20.
 """
 
 from __future__ import annotations
 
-import sys
 from decimal import Decimal
 from pathlib import Path
 
 from lxml import etree
 
 from src.models import Contabilizacao, EventoAgrupado, EventoConsolidado
-
-# Quando empacotado com PyInstaller (--onefile), os arquivos de dados sao
-# extraidos para uma pasta temporaria exposta em sys._MEIPASS; __file__ nao
-# aponta mais para a arvore de codigo-fonte original. Em execucao normal
-# (nao empacotada), sys.frozen nao existe e cai no calculo relativo usual.
-if getattr(sys, "frozen", False):
-    _BASE_DIR = Path(sys._MEIPASS)  # type: ignore[attr-defined]
-else:
-    _BASE_DIR = Path(__file__).resolve().parent.parent
-
-RESOURCES_DIR = _BASE_DIR / "assets" / "fonte"
-XSD_PATH = RESOURCES_DIR / "dro_5050_2025_06.xsd"
 
 
 def _formatar_decimal(valor: Decimal) -> str:
@@ -234,13 +221,3 @@ def salvar_xml(documento: "etree._Element", caminho: Path) -> None:
     except OSError:
         caminho_temporario.unlink(missing_ok=True)
         raise
-
-
-def validar_contra_xsd(documento: "etree._Element") -> list[str]:
-    """Retorna as mensagens de erro; lista vazia quando o XML e valido."""
-
-    schema_doc = etree.parse(str(XSD_PATH))
-    schema = etree.XMLSchema(schema_doc)
-    if schema.validate(documento):
-        return []
-    return [str(erro) for erro in schema.error_log]

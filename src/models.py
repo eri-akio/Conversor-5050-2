@@ -18,6 +18,8 @@ ETAPA_NORMALIZACAO = "Normalização"
 ETAPA_AGRUPAMENTO = "Agrupamento e cálculos"
 ETAPA_PRE_PROCESSAMENTO = "Pré-processamento"
 ETAPA_POS_PROCESSAMENTO = "Pós-processamento"
+ETAPA_GERACAO_XML = "Geração do XML"
+ETAPA_GRAVACAO_ARQUIVO = "Gravação de arquivo"
 ETAPA_XSD = "Validação XSD"
 
 

@@ -1,5 +1,4 @@
-"""Testes da Fase 4: agrupamento, probabilidades, contabilizacoes,
-sistemas/contas e totais (src/calculations.py)."""
+"""Testes de builders, regras locais e calculos puros da Fase 4."""
 
 from __future__ import annotations
 
@@ -8,15 +7,69 @@ from decimal import Decimal
 
 import pytest
 
-from src.calculations import (
+from src.builders import (
     agrupar_linhas_por_evento,
-    detectar_colisoes_id_evento,
-    extrair_probabilidades,
-    montar_evento,
+    construir_probabilidades_validas,
+    montar_evento as construir_evento,
     normalizar_linha_base,
-    validar_sistemas_e_contas,
 )
+from src.calculations import calcular_totais
 from src.reader import BASE_COLUNAS
+from src.rules_local import (
+    detectar_colisoes_id_evento,
+    validar_contabilizacao_antes_pre,
+    validar_contabilizacao_depois_pre,
+    validar_contabilizacoes_linhas,
+    validar_convencao_de_sinal,
+    validar_probabilidades_do_evento,
+    validar_probabilidades_linhas,
+    validar_referencias_linha,
+    validar_sistemas_e_contas_globais,
+    verificar_consistencia,
+)
+from src.rules_pre import (
+    validar_contabilizacao_pre,
+    validar_provisao_avaliacao_na,
+    validar_referencias_linha_pre,
+)
+
+
+def extrair_probabilidades(linhas):
+    return construir_probabilidades_validas(linhas), validar_probabilidades_linhas(linhas)
+
+
+def validar_sistemas_e_contas(linhas):
+    ocorrencias = []
+    for linha in linhas:
+        ocorrencias.extend(validar_referencias_linha(linha))
+        ocorrencias.extend(validar_referencias_linha_pre(linha))
+    ocorrencias.extend(validar_sistemas_e_contas_globais(linhas))
+    return ocorrencias
+
+
+def montar_evento(id_evento, linhas):
+    evento = construir_evento(id_evento, linhas)
+    ocorrencias = []
+    _ok, _campos, conflito = verificar_consistencia(id_evento, linhas)
+    if conflito is not None:
+        ocorrencias.append(conflito)
+    ocorrencias.extend(validar_probabilidades_linhas(linhas))
+    ocorrencias.extend(validar_contabilizacoes_linhas(linhas))
+    if evento.consistente:
+        tipo = evento.valor_evento("tipoAvaliacao")
+        ocorrencias.extend(validar_probabilidades_do_evento(
+            id_evento, tipo, evento.probabilidades
+        ))
+        data = evento.valor_evento("dataOcorrencia")
+        for contabilizacao in evento.contabilizacoes:
+            ocorrencias.extend(validar_contabilizacao_antes_pre(id_evento, contabilizacao))
+            ocorrencias.extend(validar_contabilizacao_pre(id_evento, contabilizacao, data))
+            ocorrencias.extend(validar_contabilizacao_depois_pre(id_evento, contabilizacao))
+        ocorrencias.extend(validar_provisao_avaliacao_na(evento))
+        sinal = validar_convencao_de_sinal(evento)
+        if sinal is not None:
+            ocorrencias.append(sinal)
+    return evento, ocorrencias
 
 CAMPOS_EVENTO_PADRAO = {
     "idEvento": "EVT-1",
@@ -312,21 +365,28 @@ def test_contabilizacao_incompleta_gera_base_cont_obr_001() -> None:
     assert any(o.codigo == "BASE-CONT-OBR-001" for o in ocorrencias)
 
 
-def test_perda_negativa_gera_base_sinal_cont_001() -> None:
+def test_estorno_de_perda_nao_gera_regra_local_de_sinal() -> None:
     linhas = [
         _linha(
             2,
+            dataContabilizacao="2025-06-14",
+            valorPerdaEfetiva=100,
+            valorProvisao=0,
+            valorRecuperacao=0,
+        ),
+        _linha(
+            3,
             dataContabilizacao="2025-06-15",
             valorPerdaEfetiva=-50,
             valorProvisao=0,
             valorRecuperacao=0,
-        )
+        ),
     ]
 
-    _, ocorrencias = montar_evento("EVT-1", linhas)
+    evento, ocorrencias = montar_evento("EVT-1", linhas)
 
-    assert any(o.codigo == "BASE-SINAL-CONT-001" for o in ocorrencias)
-
+    assert evento.total_perda_efetiva == Decimal("50.00")
+    assert not any(o.codigo.startswith("BASE-SINAL-") for o in ocorrencias)
 
 def test_recuperacao_positiva_gera_dro001411() -> None:
     linhas = [
@@ -517,17 +577,7 @@ def test_totais_nao_sao_calculados_quando_evento_inconsistente() -> None:
     assert evento.total_perda_efetiva is None
 
 
-def test_totais_negativos_geram_base_sinal_evento_001() -> None:
-    linhas = [
-        _linha(
-            2,
-            dataContabilizacao="2025-06-15",
-            valorPerdaEfetiva=0,
-            valorProvisao=0,
-            valorRecuperacao=-1,
-        ),
-    ]
-    # Forcar totalPerdaEfetiva negativo com duas linhas parciais.
+def test_total_de_provisao_no_limiar_nao_gera_regra_local_de_sinal() -> None:
     linhas = [
         _linha(
             2,
@@ -548,38 +598,23 @@ def test_totais_negativos_geram_base_sinal_evento_001() -> None:
     evento, ocorrencias = montar_evento("EVT-1", linhas)
 
     assert evento.total_provisao == Decimal("-10")
-    ocorrencia_sinal = next(
-        o for o in ocorrencias if o.codigo == "BASE-SINAL-EVENTO-001"
-    )
-    assert "totalProvisao" in ocorrencia_sinal.campos
+    assert not any(o.codigo.startswith("BASE-SINAL-") for o in ocorrencias)
 
-
-def test_totais_entre_dez_e_zero_negativos_tambem_reprovam_no_sinal() -> None:
-    """CONF-024: BASE-SINAL-EVENTO-001 cobre qualquer sinal invalido, mesmo
-    dentro do limiar de -10,00 usado por DRO000011/DRO000012 (fase 6)."""
-
+def test_total_negativo_dentro_da_tolerancia_fica_para_regra_oficial() -> None:
     linhas = [
         _linha(
             2,
             dataContabilizacao="2025-06-15",
-            valorPerdaEfetiva=0,
+            valorPerdaEfetiva=-5,
             valorProvisao=0,
             valorRecuperacao=0,
-        ),
+        )
     ]
-    linhas[0] = _linha(
-        2,
-        dataContabilizacao="2025-06-15",
-        valorPerdaEfetiva=-5,
-        valorProvisao=0,
-        valorRecuperacao=0,
-    )
 
     evento, ocorrencias = montar_evento("EVT-1", linhas)
 
     assert evento.total_perda_efetiva == Decimal("-5")
-    assert any(o.codigo == "BASE-SINAL-EVENTO-001" for o in ocorrencias)
-
+    assert not any(o.codigo.startswith("BASE-SINAL-") for o in ocorrencias)
 
 def test_sistema_com_nomes_diferentes_gera_base_sis_001() -> None:
     linhas = [
@@ -834,3 +869,52 @@ def test_fonte_recuperacao_fora_do_dominio_com_data_ausente_gera_os_dois() -> No
     codigos = {o.codigo for o in ocorrencias}
     assert "BASE-FONTERECUPERACAO-FORM-001" in codigos
     assert "BASE-CONT-OBR-001" in codigos
+
+
+def test_builder_preserva_todas_as_linhas_normalizadas_do_evento() -> None:
+    linhas = [
+        _linha(2, probabilidadePerda="PR", valorRisco=100),
+        _linha(3, probabilidadePerda="XX", valorRisco=200),
+    ]
+
+    evento = construir_evento("EVT-1", linhas)
+
+    assert evento.linhas == tuple(linhas)
+    assert len(evento.probabilidades) == 1
+    assert evento.probabilidades[0].codigo == "PR"
+
+def test_calcular_totais_nao_altera_o_evento_recebido() -> None:
+    evento = construir_evento(
+        "EVT-1",
+        [
+            _linha(
+                2,
+                dataContabilizacao="2025-06-15",
+                valorPerdaEfetiva=100,
+                valorProvisao=20,
+                valorRecuperacao=-5,
+            )
+        ],
+    )
+    evento.total_perda_efetiva = Decimal("999.00")
+    evento.total_provisao = Decimal("888.00")
+    evento.total_recuperado = Decimal("777.00")
+    estado_anterior = (
+        evento.total_perda_efetiva,
+        evento.total_provisao,
+        evento.total_recuperado,
+        evento.valor_total_risco,
+    )
+
+    resultado = calcular_totais(evento)
+
+    assert resultado is not None
+    assert resultado.perda_efetiva == Decimal("100.00")
+    assert resultado.provisao == Decimal("20.00")
+    assert resultado.recuperado == Decimal("-5.00")
+    assert (
+        evento.total_perda_efetiva,
+        evento.total_provisao,
+        evento.total_recuperado,
+        evento.valor_total_risco,
+    ) == estado_anterior

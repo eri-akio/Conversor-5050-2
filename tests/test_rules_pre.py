@@ -8,12 +8,13 @@ from decimal import Decimal
 
 import pytest
 
-from src.calculations import (
+from src.builders import (
     construir_mapa_contas,
     construir_mapa_sistemas,
     montar_evento,
     normalizar_linha_base,
 )
+from src.calculations import classificar_evento
 from src.normalizers import (
     normalizar_cnpj,
     normalizar_data_base,
@@ -21,11 +22,14 @@ from src.normalizers import (
     normalizar_texto,
 )
 from src.reader import BASE_COLUNAS
+from src.rules_local import (
+    cabecalho_tem_data_base_valida,
+    validar_cabecalho,
+    validar_formatos_e_dominios_evento,
+    validar_natureza_contingencia_avaliacao,
+)
 from src.rules_pre import (
     REGRAS_UM_RESULTADO,
-    cabecalho_tem_data_base_valida,
-    classificar_evento,
-    validar_cabecalho,
     validar_campos_contabeis_quando_ha_movimento,
     validar_codigo_conglomerado_unicad,
     validar_composicao_risco_total,
@@ -37,13 +41,12 @@ from src.rules_pre import (
     validar_descricao_materialidade,
     validar_evento,
     validar_evento_apenas_risco,
-    validar_formatos_e_dominios_evento,
-    validar_natureza_contingencia_avaliacao,
     validar_natureza_para_risco,
     validar_ordem_datas,
     validar_probabilidade_obrigatoria_individual,
     validar_probabilidade_proibida_massificada,
     validar_provisao_avaliacao_im,
+    validar_provisao_avaliacao_na,
     validar_sistema_referenciado,
     validar_soma_risco_positiva,
     validar_unicidade_do_documento,
@@ -76,8 +79,7 @@ def _linha(numero_linha: int, **sobrescritas: object):
 
 
 def _evento(id_evento: str, linhas: list) -> "EventoAgrupado":  # noqa: F821
-    evento, _ = montar_evento(id_evento, linhas)
-    return evento
+    return montar_evento(id_evento, linhas)
 
 
 def test_ordem_datas_invalida_gera_dro001201() -> None:
@@ -131,6 +133,29 @@ def test_natureza_tri_com_avaliacao_na_gera_base_cont_001() -> None:
     evento = _evento(
         "EVT-1",
         [_linha(2, naturezaContingencia="TRI", tipoAvaliacao="NA")],
+    )
+
+    assert (
+        validar_natureza_contingencia_avaliacao(evento).codigo
+        == "BASE-CONT-001"
+    )
+
+
+@pytest.mark.parametrize("valor", ["IE", "ME"])
+def test_natureza_tri_com_avaliacao_ie_me_gera_base_cont_001(
+    valor: str,
+) -> None:
+    """Consequencia conhecida da instrucao 12/2026: IE/ME sao um dominio
+    valido para tipoAvaliacao, mas BASE-CONT-001 nao foi alterada (decisao
+    do usuario de manter essa regra restrita a "I"/"M"), entao um evento com
+    naturezaContingencia real (ex.: TRI) e tipoAvaliacao IE/ME ainda e
+    rejeitado por esta regra. Nota: esta funcao ainda nao e chamada por
+    nenhum orquestrador do pipeline (ver tests/test_conversion.py), entao
+    essa consequencia so se manifesta quando ela for testada/chamada
+    diretamente, como aqui."""
+    evento = _evento(
+        "EVT-1",
+        [_linha(2, naturezaContingencia="TRI", tipoAvaliacao=valor)],
     )
 
     assert (
@@ -632,6 +657,52 @@ def test_evento_apenas_risco_com_contabilizacao_gera_dro001452() -> None:
     assert validar_evento_apenas_risco(evento).codigo == "DRO001452"
 
 
+def test_dro001301_enxerga_provisao_em_contabilizacao_descartada() -> None:
+    evento = _evento(
+        "EVT-1",
+        [
+            _linha(
+                2,
+                tipoAvaliacao="NA",
+                dataContabilizacao=None,
+                valorPerdaEfetiva=0,
+                valorProvisao=500,
+                valorRecuperacao=0,
+            )
+        ],
+    )
+
+    assert evento.contabilizacoes == ()
+    ocorrencias = validar_provisao_avaliacao_na(evento)
+    assert [ocorrencia.codigo for ocorrencia in ocorrencias] == ["DRO001301"]
+    assert ocorrencias[0].linhas == (2,)
+
+
+def test_dro001452_enxerga_bloco_contabil_incompleto_descartado() -> None:
+    evento = _evento(
+        "EVT-1",
+        [
+            _linha(
+                2,
+                tipoAvaliacao="I",
+                naturezaContingencia="TRI",
+                probabilidadePerda="PR",
+                valorRisco=100,
+                dataContabilizacao=None,
+                valorPerdaEfetiva=0,
+                valorProvisao=0,
+                valorRecuperacao=0,
+            )
+        ],
+    )
+
+    assert evento.contabilizacoes == ()
+    ocorrencia = validar_evento_apenas_risco(evento)
+    assert ocorrencia is not None
+    assert ocorrencia.codigo == "DRO001452"
+    assert ocorrencia.linhas == (2,)
+
+
 def test_evento_apenas_risco_sem_contabilizacao_nao_gera_ocorrencia() -> None:
     linhas = [
         _linha(
@@ -719,13 +790,9 @@ def test_campos_contabeis_quando_ha_movimento_sem_contabilizacao_gera_dro001451(
     assert any(o.codigo == "DRO001451" for o in ocorrencias)
 
 
-def test_contabilizacao_com_movimento_e_so_par_debito_gera_dro001451() -> (
-    None
-):
-    """P#3: ter só um dos dois pares completos não é suficiente -- a
-    critica oficial exige informacoes relativas as contas
-    correspondentes, e o XML de exemplo oficial sempre preenche os dois
-    lados juntos (partida dobrada)."""
+def test_contabilizacao_com_movimento_e_par_debito_completo_nao_amplia_dro001451() -> None:
+    """Um exemplo com os quatro campos nao prova obrigatoriedade universal
+    de debito e credito; um par correspondente completo satisfaz DRO001451."""
 
     linhas = [
         _linha(
@@ -743,7 +810,7 @@ def test_contabilizacao_com_movimento_e_so_par_debito_gera_dro001451() -> (
 
     ocorrencias = validar_campos_contabeis_quando_ha_movimento(evento)
 
-    assert any(o.codigo == "DRO001451" for o in ocorrencias)
+    assert not any(o.codigo == "DRO001451" for o in ocorrencias)
 
 
 def test_contabilizacao_com_movimento_e_sem_nenhuma_conta_gera_dro001451() -> (
@@ -995,6 +1062,20 @@ def test_cabecalho_tem_data_base_valida() -> None:
 def test_validar_formatos_e_dominios_evento_sem_problemas() -> None:
     evento = _evento(
         "EVT-1", [_linha(2, codigoEventoOrigem="COD1")]
+    )
+
+    assert validar_formatos_e_dominios_evento(evento) == []
+
+
+@pytest.mark.parametrize("valor", ["I", "IE", "M", "ME", "NA"])
+def test_validar_formatos_e_dominios_evento_tipo_avaliacao_aceita_ie_me(
+    valor: str,
+) -> None:
+    """Instrucao 12/2026: tipoAvaliacao tambem aceita IE e ME (processos
+    encerrados), alem do dominio anterior I|M|NA."""
+    evento = _evento(
+        "EVT-1",
+        [_linha(2, codigoEventoOrigem="COD1", tipoAvaliacao=valor)],
     )
 
     assert validar_formatos_e_dominios_evento(evento) == []

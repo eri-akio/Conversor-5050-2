@@ -5,7 +5,7 @@ regras locais aplicáveis, gerar o XML, validar contra o XSD 06/2025 e
 produzir um relatório XLSX.
 
 > Reconstrução concluída (Fases 0–10): a arquitetura antiga em camadas foi
-> removida. O código novo segue `dro5050/`, com uma função por crítica e
+> removida. O código novo segue `src/`, com uma função por crítica e
 > validações diretas por `if`, sem motor de regras genérico. Testado de
 > ponta a ponta via `python main.py` com aprovação local e XSD.
 
@@ -22,19 +22,24 @@ pelo código.
 
 ```text
 main.py
-dro5050/
-    models.py         modelos de dados
+src/
+    models.py          modelos de dados
     reader.py          leitura e validação estrutural da planilha
-    normalizers.py      normalização de células
-    calculations.py     agrupamento, probabilidades, contabilizações, totais
-    rules_pre.py        críticas locais de pré-processamento
-    rules_post.py       consolidação e críticas locais de pós-processamento
-    xml_writer.py        geração do XML e validação XSD
-    report_writer.py    relatório XLSX
-    conversion.py        orquestração do fluxo completo
-    gui.py                interface desktop Tkinter/ttk
-resources/
-    dro_5050_2025_06.xsd  esquema válido a partir da data-base 06/2025
+    normalizers.py     normalização pura de células
+    calculations.py    fórmulas e classificação puras
+    builders.py        construção de eventos, mapas e consolidados
+    rules_local.py     ocorrências locais BASE-*
+    rules_pre.py       críticas oficiais DRO001*
+    rule_pos.py        críticas oficiais DRO000*
+    xsd_validator.py   carga e validação do XSD 06/2025
+    xml_writer.py      construção, serialização e gravação do XML
+    report_writer.py   relatório XLSX
+    conversion.py      orquestração do fluxo completo
+    gui.py             interface desktop Tkinter/ttk
+assets/fonte/
+    dro_5050_2025_06.xsd
+    criticas_pre_processamento_5050.xlsx
+    criticas_pos_processamento_5050.xlsx
 tests/
 ```
 
@@ -107,7 +112,7 @@ Essa planilha revelou que `categoriaNivel1`, `categoriaNivel2`,
 descrição"` (ex.: `"I - Individual"`), não como código puro — convenção
 de uma lista de validação do Excel, já documentada no projeto anterior
 (`docs/matriz_campos.md`: `"I - Individual" → "I"`). O normalizador
-(`dro5050/normalizers.py::normalizar_codigo_rotulado`) extrai o código
+(`src/normalizers.py::normalizar_codigo_rotulado`) extrai o código
 antes do separador `" - "`; código puro continua aceito sem alteração.
 Ver seção 8 do plano funcional.
 

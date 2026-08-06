@@ -1,14 +1,7 @@
-"""Consolidacao e criticas locais de pos-processamento (Fase 6).
+"""Criticas oficiais de pos-processamento do DRO 5050.
 
-18 criticas oficiais executadas localmente (secao 18). DRO000021 usa a
-convencao de codificacao hierarquica documentada na secao 18 (nao ha tabela
-oficial de compatibilidade nivel1/nivel2 neste projeto). DRO000032
-(categoriaNivel1 em {1,2} com totalProvisao>0) usa a propria condicao da
-planilha oficial de criticas de pos-processamento, sem gate de escopo:
-aplica-se a todo evento agrupado consistente, individualizado ou nao.
-
-O relatorio so mostra problemas (secao 21): cada funcao retorna uma
-Ocorrencia (ou None/lista vazia) somente quando encontra um problema.
+Quando este modulo produz uma Ocorrencia, seu codigo pertence exclusivamente
+a familia DRO000*. Ele valida eventos e consolidados construidos em builders.py.
 """
 
 from __future__ import annotations
@@ -16,6 +9,9 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 
+from src.calculations import (
+    saldo_acumulado_fica_negativo,
+)
 from src.models import (
     ETAPA_POS_PROCESSAMENTO,
     EventoAgrupado,
@@ -25,7 +21,6 @@ from src.models import (
     TIPO_ERRO_IMPEDITIVO,
 )
 from src.regulatory_constants import DATA_INICIO_2021
-from src.rules_pre import classificar_evento
 
 MEDIA_MAXIMA = Decimal("1000.00")
 LIMIAR_SALDO_NEGATIVO = Decimal("-10.00")
@@ -51,64 +46,6 @@ def _erro(
     )
 
 
-def _intervalo_semestre(data_base: str) -> tuple[date, date]:
-    ano, mes = (int(parte) for parte in data_base.split("-"))
-    if mes == 6:
-        return date(ano, 1, 1), date(ano, 6, 30)
-    return date(ano, 7, 1), date(ano, 12, 31)
-
-
-def validar_datas_apos_data_base(
-    evento: EventoAgrupado, data_base: str
-) -> list[Ocorrencia]:
-    """BASE-DATA-PERIODO-001 (regra local — nao ha codigo oficial
-    equivalente): dataOcorrencia, dataDescoberta e toda dataContabilizacao
-    do evento nao podem ser posteriores ao fim do semestre da dataBase. So
-    deve ser chamada quando a dataBase ja foi validada (P1/P2)."""
-
-    if not evento.consistente:
-        return []
-
-    _inicio_semestre, fim_semestre = _intervalo_semestre(data_base)
-    ocorrencias: list[Ocorrencia] = []
-
-    for nome_campo in ("dataOcorrencia", "dataDescoberta"):
-        valor_data = evento.valor_evento(nome_campo)
-        if isinstance(valor_data, date) and valor_data > fim_semestre:
-            ocorrencias.append(
-                _erro(
-                    evento,
-                    "BASE-DATA-PERIODO-001",
-                    f"{nome_campo} posterior ao período da data-base.",
-                    f"{nome_campo}={valor_data} > fim do semestre={fim_semestre}.",
-                    (nome_campo,),
-                )
-            )
-
-    datas_contabilizacao_posteriores = [
-        c.data_contabilizacao
-        for c in evento.contabilizacoes
-        if c.data_contabilizacao is not None
-        and c.data_contabilizacao > fim_semestre
-    ]
-    if datas_contabilizacao_posteriores:
-        ocorrencias.append(
-            _erro(
-                evento,
-                "BASE-DATA-PERIODO-001",
-                "dataContabilizacao posterior ao período da data-base.",
-                (
-                    "dataContabilizacao mais recente="
-                    f"{max(datas_contabilizacao_posteriores)} > fim do "
-                    f"semestre={fim_semestre}."
-                ),
-                ("dataContabilizacao",),
-            )
-        )
-
-    return ocorrencias
-
-
 # ---------------------------------------------------------------------------
 # Probabilidades (secao 11/18)
 # ---------------------------------------------------------------------------
@@ -117,7 +54,10 @@ def validar_datas_apos_data_base(
 def validar_pr_com_provisao_zero(evento: EventoAgrupado) -> Ocorrencia | None:
     """DRO000004."""
 
-    if evento.total_provisao != 0:
+    if (
+        evento.valor_evento("tipoAvaliacao") != "I"
+        or evento.total_provisao != 0
+    ):
         return None
     if any(p.codigo == "PR" for p in evento.probabilidades):
         return _erro(
@@ -137,8 +77,12 @@ def validar_pr_com_provisao_zero(evento: EventoAgrupado) -> Ocorrencia | None:
 def validar_po_re_com_risco_zero(evento: EventoAgrupado) -> Ocorrencia | None:
     """DRO000005."""
 
+    if evento.valor_evento("tipoAvaliacao") != "I":
+        return None
     zeradas = [
-        p for p in evento.probabilidades if p.codigo in ("PO", "RE") and p.valor_risco == 0
+        p
+        for p in evento.probabilidades
+        if p.codigo in ("PO", "RE") and p.valor_risco == 0
     ]
     if zeradas:
         return _erro(
@@ -301,7 +245,7 @@ def validar_recuperacao_dentro_do_limite(
 
     if evento.total_recuperado is None:
         return None
-    limite = abs(evento.total_perda_efetiva) + abs(evento.total_provisao)
+    limite = evento.total_perda_efetiva + evento.total_provisao
     if abs(evento.total_recuperado) > limite:
         return _erro(
             evento,
@@ -414,36 +358,10 @@ def validar_categorias_compativeis(evento: EventoAgrupado) -> Ocorrencia | None:
 # ---------------------------------------------------------------------------
 
 
-def _saldos_diarios(
-    evento: EventoAgrupado, campo: str
-) -> list[tuple[date, Decimal]]:
-    por_dia: dict[date, Decimal] = {}
-    for contabilizacao in evento.contabilizacoes:
-        if contabilizacao.data_contabilizacao is None:
-            continue
-        valor = getattr(contabilizacao, campo)
-        por_dia[contabilizacao.data_contabilizacao] = (
-            por_dia.get(contabilizacao.data_contabilizacao, Decimal("0.00"))
-            + valor
-        )
-    return sorted(por_dia.items())
-
-
-def _saldo_acumulado_fica_negativo(
-    evento: EventoAgrupado, campo: str
-) -> bool:
-    saldo = Decimal("0.00")
-    for _dia, valor_do_dia in _saldos_diarios(evento, campo):
-        saldo += valor_do_dia
-        if saldo < 0:
-            return True
-    return False
-
-
 def validar_saldo_acumulado_perda(evento: EventoAgrupado) -> Ocorrencia | None:
     """DRO000023."""
 
-    if _saldo_acumulado_fica_negativo(evento, "valor_perda_efetiva"):
+    if saldo_acumulado_fica_negativo(evento, "valor_perda_efetiva"):
         return _erro(
             evento,
             "DRO000023",
@@ -460,7 +378,7 @@ def validar_saldo_acumulado_perda(evento: EventoAgrupado) -> Ocorrencia | None:
 def validar_saldo_acumulado_provisao(evento: EventoAgrupado) -> Ocorrencia | None:
     """DRO000024 (Esclarecimento -> AVISO)."""
 
-    if _saldo_acumulado_fica_negativo(evento, "valor_provisao"):
+    if saldo_acumulado_fica_negativo(evento, "valor_provisao"):
         return _erro(
             evento,
             "DRO000024",
@@ -507,70 +425,6 @@ def validar_evento(evento: EventoAgrupado) -> list[Ocorrencia]:
 # ---------------------------------------------------------------------------
 # Consolidacao por categoriaNivel1 (secao 16)
 # ---------------------------------------------------------------------------
-
-
-def consolidar_eventos(
-    eventos: dict[str, EventoAgrupado], data_base: str
-) -> dict[str, EventoConsolidado]:
-    inicio_semestre, fim_semestre = _intervalo_semestre(data_base)
-
-    por_categoria: dict[str, list[EventoAgrupado]] = {}
-    for evento in eventos.values():
-        if not evento.consistente or evento.total_perda_efetiva is None:
-            continue
-        if classificar_evento(evento):
-            continue
-        categoria = evento.valor_evento("categoriaNivel1")
-        if categoria is None:
-            continue
-        por_categoria.setdefault(str(categoria), []).append(evento)
-
-    consolidados: dict[str, EventoConsolidado] = {}
-    for categoria, eventos_da_categoria in por_categoria.items():
-        perda_total = sum(
-            (e.total_perda_efetiva for e in eventos_da_categoria),
-            Decimal("0.00"),
-        )
-        provisao_total = sum(
-            (e.total_provisao for e in eventos_da_categoria), Decimal("0.00")
-        )
-
-        # Secao 16: o evento e vinculado ao semestre da sua PRIMEIRA
-        # contabilizacao (nao a qualquer semestre em que tenha alguma
-        # contabilizacao) — conta uma unica vez, no semestre de origem, com
-        # o total acumulado de todas as suas contabilizacoes (mesmo
-        # espirito de perda_total/provisao_total, mas vinculado a 1
-        # semestre).
-        perda_semestre = Decimal("0.00")
-        provisao_semestre = Decimal("0.00")
-        num_semestre = 0
-        for evento in eventos_da_categoria:
-            datas_contabilizacao = [
-                c.data_contabilizacao
-                for c in evento.contabilizacoes
-                if c.data_contabilizacao is not None
-            ]
-            if not datas_contabilizacao:
-                continue
-            primeira_contabilizacao = min(datas_contabilizacao)
-            if not (
-                inicio_semestre <= primeira_contabilizacao <= fim_semestre
-            ):
-                continue
-            num_semestre += 1
-            perda_semestre += evento.total_perda_efetiva
-            provisao_semestre += evento.total_provisao
-
-        consolidados[categoria] = EventoConsolidado(
-            categoria_nivel1=categoria,
-            num_eventos_total=len(eventos_da_categoria),
-            num_eventos_semestre=num_semestre,
-            perda_efetiva_total=perda_total,
-            perda_efetiva_semestre=perda_semestre,
-            provisao_total=provisao_total,
-            provisao_semestre=provisao_semestre,
-        )
-    return consolidados
 
 
 def validar_media_semestral(

@@ -178,6 +178,17 @@ Logo, `IE` e `ME` falhariam na validação XSD.
 
 Essa transformação eliminaria informação regulatória e alteraria o significado do dado.
 
+### Status: decisão de negócio substituiu a decisão provisória acima
+
+A decisão provisória descrita nesta seção **não foi a implementada**. Por
+decisão explícita do usuário (não uma correção técnica), o sistema aceita
+`IE`/`ME` **incondicionalmente** (sem gating por `dataBase >= 2026-12`) e os
+emite no XML tal como informados, **sem** bloquear o status de aprovação —
+mesmo com o XSD 06/2025 fornecido só declarando `I|M|NA`. A regra "nunca
+transformar `IE` em `I` nem `ME` em `M`" continua valendo (nenhuma conversão
+é feita). Ver `src/rules_local.py` (`TIPOS_AVALIACAO_VALIDOS`) e
+`docs/matriz_campos.md` (linha do campo `tipoAvaliacao`).
+
 ---
 
 ## `CONF-003` — Domínio de `naturezaContingencia`
@@ -1059,22 +1070,14 @@ ordem possível dos lançamentos deixaria o saldo negativo, a regra é registrad
 como `REGRA NÃO EXECUTADA`. O sistema não utiliza arbitrariamente a ordem da
 planilha para aprovar ou reprovar a crítica.
 
-## CONF-024 — Sinal positivo versus limite de -R$ 10,00
+## CONF-024 - Estornos versus limite de -R$ 10,00
 
-As instruções de preenchimento determinam que perda e provisão sejam lançadas
-com valor positivo. As críticas de pós-processamento `DRO000011` e
-`DRO000012`, por outro lado, descrevem inconsistência somente quando o total é
-inferior a `-10`.
-
-**Precedência aplicada:** a validação baseada nas instruções continua
-reprovando qualquer total negativo por meio de `BASE-SINAL-EVENTO-001`.
-Separadamente, `DRO000011` e `DRO000012` mantêm exatamente o limite de `-10`
-descrito nas críticas.
-
-**Impacto:** um valor entre `-10,00` e `0,00` pode não reprovar a crítica de
-pós-processamento específica, mas continua impedindo a aprovação geral pela
-regra de sinal das instruções.
-
+**Decisao revisada:** movimentos negativos sao tratados como estornos
+possiveis, nao como erro local absoluto. A validacao fica concentrada nas
+criticas oficiais `DRO000011`, `DRO000012`, `DRO000023` e `DRO000024`, que
+avaliam respectivamente totais e saldos acumulados. Assim, um estorno que nao
+torne o saldo acumulado indevidamente negativo nao e rejeitado por uma regra
+`BASE-*` adicional.
 
 ## CONF-025 — Comprimento de `codigoSistema`
 

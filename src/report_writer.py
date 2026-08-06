@@ -2,7 +2,7 @@
 
 Ver docs/plano_conversor_dro_5050_simples.md secao 21. A aba Inconsistencias
 mostra somente problemas: regras aprovadas nao geram nenhuma linha, porque
-as funcoes de critica (rules_pre/rules_post) so retornam uma Ocorrencia
+as funcoes de critica (rules_local/rules_pre/rule_pos) so retornam uma Ocorrencia
 quando ha um problema.
 
 Formatacao espelhada do projeto anterior
@@ -22,13 +22,31 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.worksheet.worksheet import Worksheet
 
-from src.models import ETAPA_XSD, Ocorrencia, TIPO_AVISO, TIPO_ERRO_IMPEDITIVO
+from src.models import (
+    ETAPA_XSD,
+    Ocorrencia,
+    TIPO_AVISO,
+    TIPO_ERRO_IMPEDITIVO,
+    TIPO_FALHA_TECNICA,
+)
 
 TITLE_FILL = "17365D"
 SECTION_FILL = "1F4E78"
 LABEL_FILL = "D9EAF7"
 HEADER_FONT_COLOR = "FFFFFF"
 BORDER_COLOR = "B7C9D6"
+
+REGRAS_NAO_EXECUTADAS = (
+    "DRO001002",
+    "DRO000016",
+    "DRO000017",
+    "DRO000022",
+    "DRO000026",
+    "DRO000027",
+    "DRO000028",
+    "DRO000029",
+    "DRO000030",
+)
 
 STATUS_FILLS = {
     "APROVADO": "C6EFCE",
@@ -165,9 +183,15 @@ def _escrever_resumo(
         ),
         ("Avisos", sum(1 for o in ocorrencias if o.tipo == TIPO_AVISO)),
         (
+            "Falhas técnicas",
+            sum(1 for o in ocorrencias if o.tipo == TIPO_FALHA_TECNICA),
+        ),
+        (
             "Erros XSD",
             sum(1 for o in ocorrencias if o.etapa == ETAPA_XSD),
         ),
+        ("Regras não executadas", len(REGRAS_NAO_EXECUTADAS)),
+        ("Códigos não executados", ", ".join(REGRAS_NAO_EXECUTADAS)),
     )
     for indice, (rotulo, valor) in enumerate(
         indicadores, start=linha_indicadores + 1

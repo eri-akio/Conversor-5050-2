@@ -16,10 +16,7 @@ from decimal import Decimal, InvalidOperation
 
 from src.models import (
     CampoNormalizado,
-    ETAPA_NORMALIZACAO,
-    Ocorrencia,
     StatusCampo,
-    TIPO_ERRO_IMPEDITIVO,
 )
 
 # Ausencia e invalidez (secao 8):
@@ -476,51 +473,3 @@ def normalizar_decimal(nome: str, valor: object) -> CampoNormalizado:
             ),
         )
     return CampoNormalizado(nome, valor, decimal_valor, StatusCampo.VALIDO)
-
-
-def detectar_ausencia_e_invalidez(
-    campos: dict[str, CampoNormalizado],
-    numero_linha: int,
-    id_evento: str | None,
-    *,
-    sempre_obrigatorios: tuple[str, ...] = CAMPOS_SEMPRE_OBRIGATORIOS,
-) -> list[Ocorrencia]:
-    """BASE-OBR-001 (ausencia em campo sempre obrigatorio) e BASE-NULO-001
-    (marcador invalido, em qualquer campo)."""
-
-    ocorrencias: list[Ocorrencia] = []
-
-    for nome in sempre_obrigatorios:
-        campo = campos.get(nome)
-        if campo is not None and campo.ausente:
-            ocorrencias.append(
-                Ocorrencia(
-                    etapa=ETAPA_NORMALIZACAO,
-                    tipo=TIPO_ERRO_IMPEDITIVO,
-                    codigo="BASE-OBR-001",
-                    descricao="Celula sempre obrigatoria vazia.",
-                    detalhe=f"O campo {nome} esta ausente.",
-                    linhas=(numero_linha,),
-                    id_evento=id_evento,
-                    campos=(nome,),
-                )
-            )
-
-    for nome, campo in campos.items():
-        if campo.invalido:
-            ocorrencias.append(
-                Ocorrencia(
-                    etapa=ETAPA_NORMALIZACAO,
-                    tipo=TIPO_ERRO_IMPEDITIVO,
-                    codigo="BASE-NULO-001",
-                    descricao=(
-                        "Marcador invalido como N/A, NULL, - ou *."
-                    ),
-                    detalhe=campo.motivo or f"O campo {nome} e invalido.",
-                    linhas=(numero_linha,),
-                    id_evento=id_evento,
-                    campos=(nome,),
-                )
-            )
-
-    return ocorrencias

@@ -91,7 +91,6 @@ conflito documental já registrado.
 - `DRO001231`: perda + provisão deve atingir R$ 1.000,00 para evento individualizado;
 - `DRO001232`: módulo da recuperação não pode superar perda + provisão;
 - `BASE-RISCO-001`: `valorTotalRisco`, quando informado, deve atingir R$ 10.000.000,00;
-- `BASE-SINAL-EVENTO-001`: convenções de sinal dos totais.
 
 ### Descrição do evento
 
@@ -142,7 +141,6 @@ Elas são marcadas como `REGRA NÃO EXECUTADA` nesta etapa.
 
 - `BASE-CONT-REQ-001`: registro contábil exige data e valor de perda;
 - `BASE-CONT-DATA-001`: contabilização não pode ser anterior à descoberta;
-- `BASE-SINAL-CONT-001`: perda contabilizada não pode ser negativa;
 - `DRO001411`: recuperação deve ser menor ou igual a zero;
 - `DRO001421`: recuperação negativa exige fonte `S` ou `O`;
 - `DRO001441` a `DRO001444`: pares entre conta interna e conta COSIF;

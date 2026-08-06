@@ -10,7 +10,6 @@ import pytest
 from src.models import CampoNormalizado, StatusCampo
 from src.normalizers import (
     _decimal_fora_da_faixa,
-    detectar_ausencia_e_invalidez,
     maiusculizar_campo,
     normalizar_cnpj,
     normalizar_codigo_rotulado,
@@ -21,6 +20,7 @@ from src.normalizers import (
     normalizar_removendo_caracteres,
     normalizar_texto,
 )
+from src.rules_local import detectar_ausencia_e_invalidez
 
 
 @pytest.mark.parametrize("valor", [None, "", "   "])

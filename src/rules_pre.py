@@ -1,11 +1,7 @@
-"""Criticas locais de pre-processamento (Fase 5).
+"""Criticas oficiais de pre-processamento do DRO 5050.
 
-28 criticas oficiais executadas localmente (secao 17) + BASE-CONT-001
-(secao 9) + classificacao individualizado/consolidado (secao 16).
-
-O relatorio so mostra problemas (secao 21): cada funcao aqui retorna uma
-Ocorrencia (ou None/lista vazia) somente quando encontra um problema. Uma
-regra aprovada nao produz nenhum registro.
+Quando este modulo produz uma Ocorrencia, seu codigo pertence exclusivamente
+a familia DRO001*. Regras locais BASE-* ficam concentradas em rules_local.py.
 """
 
 from __future__ import annotations
@@ -14,44 +10,25 @@ import re
 from datetime import date
 from decimal import Decimal
 
-from src.calculations import COLUNAS_CONTABILIZACAO
+from src.builders import COLUNAS_CONTABILIZACAO
 from src.models import (
     CampoNormalizado,
+    Contabilizacao,
     ETAPA_PRE_PROCESSAMENTO,
     EventoAgrupado,
     LinhaNormalizada,
     Ocorrencia,
     TIPO_ERRO_IMPEDITIVO,
 )
-from src.normalizers import colapsar_espacos_para_validacao
 from src.regulatory_constants import (
     CODIGOS_CONGLOMERADOS_VALIDOS,
     CONTAS_COSIF_VALIDAS,
     DATA_INICIO_2021,
-    LIMIAR_INDIVIDUALIZACAO,
-    LIMIAR_RISCO_NAO_COBERTO,
 )
 
 LIMIAR_MATERIALIDADE = Decimal("1000000.00")
 
 NATUREZAS_CONTINGENCIA = frozenset({"TRI", "TRA", "CIV"})
-
-# Formato/tamanho/dominio dos campos constantes no evento (secao 20 do
-# plano: espelha facetas do XSD 06/2025 que hoje so seriam pegas tarde,
-# na validacao contra o XSD). Ver validar_formatos_e_dominios_evento.
-_PADRAO_ID_EVENTO = re.compile(r"^[0-9A-Za-z]{1,40}$")
-_PADRAO_CATEGORIA_NIVEL1 = re.compile(r"^[1-8]$")
-_PADRAO_CATEGORIA_NIVEL2 = re.compile(
-    r"^(?:11|12|21|22|31|32|33|41|42|43|44|45|51|61|71|8[1-6])$"
-)
-TIPOS_AVALIACAO_VALIDOS = frozenset({"I", "M", "NA"})
-_PADRAO_UNIDADE_NEGOCIO = re.compile(r"^[1-8]$")
-NATUREZAS_CONTINGENCIA_VALIDAS = NATUREZAS_CONTINGENCIA | {"NA"}
-_PADRAO_CODIGO_EVENTO_ORIGEM = re.compile(r"^[0-9A-Za-z]{1,73}$")
-LIMITE_DESCRICAO_EVENTO = 200
-_PADRAO_ID_BACEN = re.compile(r"^(?:[Zz][0-9]{7}|[Ii][0-9]{5})$")
-RISCOS_ASSOCIADOS_VALIDOS = frozenset({"C", "M", "NA"})
-OPCOES_SIM_NAO = frozenset({"S", "N"})
 
 
 def _erro(
@@ -218,38 +195,6 @@ def validar_ligado_risco_cibernetico_obrigatorio(
             ),
             f"dataOcorrencia={ocorrencia_data}, campo ausente.",
             ("ligadoRiscoCibernetico",),
-        )
-    return None
-
-
-def validar_natureza_contingencia_avaliacao(
-    evento: EventoAgrupado,
-) -> Ocorrencia | None:
-    """BASE-CONT-001 (secao 9, regra local)."""
-
-    natureza = evento.valor_evento("naturezaContingencia")
-    avaliacao = evento.valor_evento("tipoAvaliacao")
-    if natureza is None or avaliacao is None:
-        return None
-
-    if natureza == "NA" and avaliacao != "NA":
-        return _erro(
-            evento,
-            "BASE-CONT-001",
-            "Natureza da contingência incompatível com avaliação.",
-            f"naturezaContingencia=NA exige tipoAvaliacao=NA (era {avaliacao}).",
-            ("naturezaContingencia", "tipoAvaliacao"),
-        )
-    if natureza in NATUREZAS_CONTINGENCIA and avaliacao not in ("I", "M"):
-        return _erro(
-            evento,
-            "BASE-CONT-001",
-            "Natureza da contingência incompatível com avaliação.",
-            (
-                f"naturezaContingencia={natureza} exige tipoAvaliacao I ou M "
-                f"(era {avaliacao})."
-            ),
-            ("naturezaContingencia", "tipoAvaliacao"),
         )
     return None
 
@@ -525,9 +470,8 @@ def validar_soma_risco_positiva(evento: EventoAgrupado) -> Ocorrencia | None:
 
 
 # ---------------------------------------------------------------------------
-# Secao 13 - referencias de sistemas e contas (unicidade global ja garantida
-# em calculations.validar_sistemas_e_contas; aqui verificamos apenas se o
-# evento referencia um sistema/conta que ele proprio informou)
+# Secao 13 - referencias de sistemas e contas. A coerencia global e local;
+# aqui as criticas oficiais verificam as referencias feitas pelo evento.
 # ---------------------------------------------------------------------------
 
 
@@ -535,7 +479,7 @@ def validar_sistema_referenciado(
     evento: EventoAgrupado, sistemas_globais: dict[str, str]
 ) -> Ocorrencia | None:
     """DRO001321: codSistemaOrigem informado deve existir no Bloco 3
-    (bloco global de sistemas, calculations.construir_mapa_sistemas) --
+    (bloco global de sistemas, builders.construir_mapa_sistemas) --
     nao precisa ter nomeSistema preenchido na mesma linha/evento que o
     referencia (planilha oficial: "Verifica se o codigo preenchido...
     esta devidamente informado no Bloco 3"). A ausencia do proprio
@@ -566,7 +510,7 @@ def validar_contas_referenciadas(
 ) -> list[Ocorrencia]:
     """DRO001401/DRO001402: a conta interna referenciada em cada
     contabilizacao deve existir no bloco global de contas (Bloco 4,
-    calculations.construir_mapa_contas) -- nao precisa ter o nome
+    builders.construir_mapa_contas) -- nao precisa ter o nome
     repetido na mesma linha que a referencia (planilha oficial: "se a
     referida conta esta devidamente informada no campo codigoConta do
     Bloco 4")."""
@@ -743,14 +687,10 @@ def validar_campos_contabeis_quando_ha_movimento(
        dados.
     2. A checagem real da critica oficial: cada contabilizacao com
        movimento (perda, provisao ou recuperacao diferente de zero) deve
-       ter os dois pares de conta completos -- debito (Balancete +
-       COSIF) e credito (Balancete + COSIF), nao apenas uma das quatro
-       isoladamente. Confirmado no XML de exemplo oficial
-       ("DRO - Modelo XML do Documento 5050 - Exemplo.xml"): as tres
-       contabilizacoes do exemplo sempre preenchem as 4 contas juntas,
-       nunca so um lado -- consistente com partida dobrada (todo
-       lancamento tem debito e credito). O XSD aceita as 4 contas como
-       opcionais (nao pega isso), entao a responsabilidade e local."""
+       ter ao menos um par correspondente completo (Balancete + COSIF).
+       DRO001441 a DRO001444 continuam responsaveis por pares assimetricos.
+       Nao se presume, apenas pelo XML de exemplo, que debito e credito
+       sejam simultaneamente obrigatorios em todo tipo de movimento."""
 
     if evento.total_perda_efetiva is None:
         return []
@@ -796,7 +736,7 @@ def validar_campos_contabeis_quando_ha_movimento(
             contabilizacao.conta_credito is not None
             and contabilizacao.conta_cosif_credito is not None
         )
-        if not (par_debito_completo and par_credito_completo):
+        if not (par_debito_completo or par_credito_completo):
             ocorrencias.append(
                 Ocorrencia(
                     etapa=ETAPA_PRE_PROCESSAMENTO,
@@ -814,9 +754,9 @@ def validar_campos_contabeis_quando_ha_movimento(
                         f"valorPerdaEfetiva={contabilizacao.valor_perda_efetiva:.2f}, "
                         f"valorProvisao={contabilizacao.valor_provisao:.2f}, "
                         f"valorRecuperacao={contabilizacao.valor_recuperacao:.2f} "
-                        "exige contaBalAnaliticoDebito+contaCosifDebito e "
-                        "contaBalAnaliticoCredito+contaCosifCredito "
-                        "completos."
+                        "exige ao menos um par correspondente completo: "
+                        "contaBalAnaliticoDebito+contaCosifDebito ou "
+                        "contaBalAnaliticoCredito+contaCosifCredito."
                     ),
                     linhas=(contabilizacao.numero_linha,),
                     id_evento=evento.id_evento,
@@ -833,55 +773,47 @@ def validar_campos_contabeis_quando_ha_movimento(
 
 
 def validar_evento_apenas_risco(evento: EventoAgrupado) -> Ocorrencia | None:
-    """DRO001452: evento EXCLUSIVAMENTE de risco nao deve ter
-    contabilizacao."""
+    """DRO001452: evento exclusivamente de risco nao aceita bloco contabil."""
 
     if not _evento_apenas_risco(evento):
         return None
-    if evento.contabilizacoes:
-        return _erro(
-            evento,
-            "DRO001452",
-            (
-                "Verifica a inexistência de informação nos campos de "
-                "informações contábeis, por indevida, nos casos de um "
-                "idEvento que contenha lançamentos relativos apenas a "
-                "risco. Ou seja, não é devida a informação de conta "
-                "contábil nos casos de um contexto de informações "
-                'exclusivas a valores em risco. O bloco XML "contabilizacao" '
-                "não deve ser informado."
-            ),
-            (
-                f"soma(valorRisco)={_soma_risco(evento):.2f} com "
-                f"{len(evento.contabilizacoes)} contabilização(ões) "
-                "registrada(s)."
-            ),
-            ("valorRisco",),
+    linhas_com_dados_contabeis = tuple(
+        linha
+        for linha in evento.linhas
+        if any(
+            not linha.campos[nome].ausente
+            for nome in COLUNAS_CONTABILIZACAO
         )
-    return None
+    )
+    if not linhas_com_dados_contabeis:
+        return None
+    return Ocorrencia(
+        etapa=ETAPA_PRE_PROCESSAMENTO,
+        tipo=TIPO_ERRO_IMPEDITIVO,
+        codigo="DRO001452",
+        descricao=(
+            "Verifica a inexist\u00eancia de informa\u00e7\u00e3o nos campos de "
+            "informa\u00e7\u00f5es cont\u00e1beis, por indevida, nos casos de um "
+            "idEvento que contenha lan\u00e7amentos relativos apenas a "
+            "risco. Ou seja, n\u00e3o \u00e9 devida a informa\u00e7\u00e3o de conta "
+            "cont\u00e1bil nos casos de um contexto de informa\u00e7\u00f5es "
+            'exclusivas a valores em risco. O bloco XML "contabilizacao" '
+            "n\u00e3o deve ser informado."
+        ),
+        detalhe=(
+            f"soma(valorRisco)={_soma_risco(evento):.2f} com "
+            f"{len(linhas_com_dados_contabeis)} linha(s) contendo "
+            "informacao contabil."
+        ),
+        linhas=tuple(linha.numero_linha for linha in linhas_com_dados_contabeis),
+        id_evento=evento.id_evento,
+        campos=("valorRisco", *COLUNAS_CONTABILIZACAO),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Secao 16 - individualizacao e consolidacao
 # ---------------------------------------------------------------------------
-
-
-def classificar_evento(evento: EventoAgrupado) -> bool:
-    """True quando o evento deve ser individualizado (secao 16).
-
-    Cobre a critica oficial DRO001231: o limiar de R$ 1.000,00 e o risco nao
-    coberto de R$ 10.000.000,00 sao os dois criterios de individualizacao;
-    nao ha uma condicao de reprovacao separada da propria classificacao."""
-
-    if not evento.consistente or evento.total_perda_efetiva is None:
-        return False
-
-    limiar_atingido = (
-        evento.total_perda_efetiva + evento.total_provisao
-        >= LIMIAR_INDIVIDUALIZACAO
-    )
-    risco_nao_coberto = _soma_risco(evento) >= LIMIAR_RISCO_NAO_COBERTO
-    return limiar_atingido or risco_nao_coberto
 
 
 # ---------------------------------------------------------------------------
@@ -895,7 +827,6 @@ REGRAS_UM_RESULTADO = (
     validar_risco_associado_obrigatorio,
     validar_ligado_risco_socioambiental_obrigatorio,
     validar_ligado_risco_cibernetico_obrigatorio,
-    validar_natureza_contingencia_avaliacao,
     validar_limite_recuperacao,
     validar_natureza_para_risco,
     validar_descricao_materialidade,
@@ -903,7 +834,6 @@ REGRAS_UM_RESULTADO = (
     validar_probabilidade_obrigatoria_individual,
     validar_probabilidade_proibida_massificada,
     validar_soma_risco_positiva,
-    validar_evento_apenas_risco,
 )
 
 REGRAS_VARIOS_RESULTADOS = (
@@ -922,10 +852,9 @@ def validar_evento(evento: EventoAgrupado) -> list[Ocorrencia]:
     DRO001402, que precisam dos blocos globais de sistemas/contas e sao
     chamadas explicitamente por conversion.py).
 
-    A DRO001302 tambem NAO esta mais aqui: e executada separadamente por
-    conversion.py, antes do curto-circuito de formato, porque precisa
-    analisar diretamente as linhas normalizadas do evento (ver
-    validar_provisao_avaliacao_im)."""
+    DRO001302 e DRO001452 sao executadas separadamente por conversion.py,
+    antes do bloqueio local, porque precisam analisar diretamente as linhas
+    normalizadas originais do evento."""
 
     ocorrencias: list[Ocorrencia] = []
     for regra in REGRAS_UM_RESULTADO:
@@ -937,146 +866,14 @@ def validar_evento(evento: EventoAgrupado) -> list[Ocorrencia]:
     return ocorrencias
 
 
-def validar_formatos_e_dominios_evento(
-    evento: EventoAgrupado,
-) -> list[Ocorrencia]:
-    """Formato/tamanho/dominio dos campos constantes no evento, espelhando
-    facetas do XSD 06/2025 que hoje so seriam pegas tarde, na validacao
-    contra o XSD (etapa 22). Cada campo e checado so quando ja passou do
-    estado ausente/invalido, para nao duplicar BASE-OBR-001/BASE-NULO-001.
-    Chamada por conversion.py antes de validar_evento/validar_evento_pos/
-    referencias/consolidacao, que sao suprimidas quando esta funcao
-    encontra qualquer problema."""
-
-    ocorrencias: list[Ocorrencia] = []
-
-    def _campo(nome: str) -> tuple[bool, object]:
-        campo = evento.linhas[0].campos.get(nome)
-        if campo is None or campo.ausente or campo.invalido:
-            return False, None
-        return True, campo.valor
-
-    ok, valor = _campo("idEvento")
-    if ok and not _PADRAO_ID_EVENTO.fullmatch(str(valor)):
-        ocorrencias.append(_erro(
-            evento, "BASE-IDEVENTO-FORM-001",
-            "idEvento deve ser alfanumérico, de 1 a 40 caracteres.",
-            f"idEvento={valor!r} (após remoção de hífen).", ("idEvento",),
-        ))
-
-    ok, valor = _campo("categoriaNivel1")
-    if ok and not _PADRAO_CATEGORIA_NIVEL1.fullmatch(str(valor)):
-        ocorrencias.append(_erro(
-            evento, "BASE-CATEGORIA1-FORM-001",
-            "categoriaNivel1 deve ser um dígito de 1 a 8.",
-            f"categoriaNivel1={valor!r}.", ("categoriaNivel1",),
-        ))
-
-    ok, valor = _campo("categoriaNivel2")
-    if ok and not _PADRAO_CATEGORIA_NIVEL2.fullmatch(str(valor)):
-        ocorrencias.append(_erro(
-            evento, "BASE-CATEGORIA2-FORM-001",
-            "categoriaNivel2 não está na lista oficial de códigos.",
-            f"categoriaNivel2={valor!r}.", ("categoriaNivel2",),
-        ))
-
-    ok, valor = _campo("tipoAvaliacao")
-    if ok and str(valor) not in TIPOS_AVALIACAO_VALIDOS:
-        ocorrencias.append(_erro(
-            evento, "BASE-AVALIACAO-FORM-001",
-            "tipoAvaliacao deve ser I, M ou NA.",
-            f"tipoAvaliacao={valor!r}.", ("tipoAvaliacao",),
-        ))
-
-    ok, valor = _campo("unidadeNegocio")
-    if ok and not _PADRAO_UNIDADE_NEGOCIO.fullmatch(str(valor)):
-        ocorrencias.append(_erro(
-            evento, "BASE-UNIDADE-FORM-001",
-            "unidadeNegocio deve ser um dígito de 1 a 8.",
-            f"unidadeNegocio={valor!r}.", ("unidadeNegocio",),
-        ))
-
-    ok, valor = _campo("naturezaContingencia")
-    if ok and str(valor) not in NATUREZAS_CONTINGENCIA_VALIDAS:
-        ocorrencias.append(_erro(
-            evento, "BASE-NATUREZA-FORM-001",
-            "naturezaContingencia deve ser TRI, TRA, CIV ou NA.",
-            f"naturezaContingencia={valor!r}.", ("naturezaContingencia",),
-        ))
-
-    ok, valor = _campo("codigoEventoOrigem")
-    if ok and not _PADRAO_CODIGO_EVENTO_ORIGEM.fullmatch(str(valor)):
-        ocorrencias.append(_erro(
-            evento, "BASE-EVENTOORIGEM-FORM-001",
-            "codigoEventoOrigem deve ser alfanumérico, de 1 a 73 caracteres.",
-            f"codigoEventoOrigem={valor!r}.", ("codigoEventoOrigem",),
-        ))
-
-    ok, valor = _campo("descricaoEvento")
-    if ok:
-        colapsado = colapsar_espacos_para_validacao(str(valor))
-        if len(colapsado) > LIMITE_DESCRICAO_EVENTO:
-            ocorrencias.append(_erro(
-                evento, "BASE-DESCRICAO-FORM-001",
-                f"descricaoEvento excede {LIMITE_DESCRICAO_EVENTO} caracteres.",
-                f"descricaoEvento tem {len(colapsado)} caracteres após "
-                "colapsar espaços.",
-                ("descricaoEvento",),
-            ))
-
-    ok, valor = _campo("idBacen")
-    if ok and not _PADRAO_ID_BACEN.fullmatch(str(valor)):
-        ocorrencias.append(_erro(
-            evento, "BASE-IDBACEN-FORM-001",
-            'idBacen deve ser "Z" + 7 dígitos ou "I" + 5 dígitos.',
-            f"idBacen={valor!r}.", ("idBacen",),
-        ))
-
-    ok, valor = _campo("riscoAssociado")
-    if ok and str(valor) not in RISCOS_ASSOCIADOS_VALIDOS:
-        ocorrencias.append(_erro(
-            evento, "BASE-RISCOASSOCIADO-FORM-001",
-            "riscoAssociado deve ser C, M ou NA.",
-            f"riscoAssociado={valor!r}.", ("riscoAssociado",),
-        ))
-
-    ok, valor = _campo("ligadoRiscoSocioAmbiental")
-    if ok and str(valor) not in OPCOES_SIM_NAO:
-        ocorrencias.append(_erro(
-            evento, "BASE-SOCIOAMBIENTAL-FORM-001",
-            "ligadoRiscoSocioAmbiental deve ser S ou N.",
-            f"ligadoRiscoSocioAmbiental={valor!r}.",
-            ("ligadoRiscoSocioAmbiental",),
-        ))
-
-    ok, valor = _campo("ligadoRiscoCibernetico")
-    if ok and str(valor) not in OPCOES_SIM_NAO:
-        ocorrencias.append(_erro(
-            evento, "BASE-CIBERNETICO-FORM-001",
-            "ligadoRiscoCibernetico deve ser S ou N.",
-            f"ligadoRiscoCibernetico={valor!r}.", ("ligadoRiscoCibernetico",),
-        ))
-
-    ok, valor = _campo("negocioDescontinuado")
-    if ok and str(valor) not in OPCOES_SIM_NAO:
-        ocorrencias.append(_erro(
-            evento, "BASE-NEGOCIO-FORM-001",
-            "negocioDescontinuado deve ser S ou N.",
-            f"negocioDescontinuado={valor!r}.", ("negocioDescontinuado",),
-        ))
-
-    return ocorrencias
-
-
 def validar_unicidade_do_documento(
     eventos: dict[str, EventoAgrupado],
 ) -> list[Ocorrencia]:
     """DRO001101/DRO001102/DRO001103.
 
     Garantidas por construcao neste projeto: os eventos sao agrupados por
-    idEvento em um dict (calculations.agrupar_linhas_por_evento), que nao
-    pode ter chaves duplicadas; sistemas e contas sao deduplicados por
-    codigo em calculations.validar_sistemas_e_contas. Nao ha condicao de
+    idEvento em um dict (builders.agrupar_linhas_por_evento), que nao
+    pode ter chaves duplicadas; sistemas e contas sao deduplicados por codigo pelos builders de mapas. Nao ha condicao de
     dado que viole essas tres criticas neste desenho de dados."""
 
     del eventos  # Mantido no assinatura para deixar a critica documentada.
@@ -1087,15 +884,13 @@ def validar_unicidade_do_documento(
 # Cabecalho (secao 7)
 # ---------------------------------------------------------------------------
 
-CODIGO_DOCUMENTO_5050 = "5050"
 _PADRAO_CONGLOMERADO = re.compile(r"^C[0-9]{7}$")
-TIPOS_REMESSA_VALIDOS = frozenset({"I", "S"})
-OPCOES_PROVISAO_ACUMULADA_VALIDAS = frozenset({"S", "N"})
 
 
 def _erro_cabecalho(
     codigo: str, descricao: str, detalhe: str, campos: tuple[str, ...]
 ) -> Ocorrencia:
+    """Constroi uma ocorrencia oficial de pre-processamento do cabecalho."""
     return Ocorrencia(
         etapa=ETAPA_PRE_PROCESSAMENTO,
         tipo=TIPO_ERRO_IMPEDITIVO,
@@ -1104,177 +899,6 @@ def _erro_cabecalho(
         detalhe=detalhe,
         campos=campos,
     )
-
-
-def validar_cabecalho(
-    cabecalho: dict[str, CampoNormalizado],
-) -> list[Ocorrencia]:
-    """Validacoes de negocio do Cabecalho (secao 7), confirmadas contra
-    assets/schemas/dro_5050_2025_06.xsd. Cada campo e checado em ordem de
-    estado (ausente -> invalido -> dominio) antes de qualquer regex de
-    dominio, para nao chamar regex com None, nao gerar mais de uma
-    ocorrencia para o mesmo problema, e preservar o motivo especifico ja
-    produzido pelo normalizador quando o campo ja veio INVALIDO."""
-
-    ocorrencias: list[Ocorrencia] = []
-
-    campo = cabecalho["codigoDocumento"]
-    if campo.ausente:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CODDOC-001",
-                "codigoDocumento obrigatório.",
-                "codigoDocumento ausente.",
-                ("codigoDocumento",),
-            )
-        )
-    elif campo.invalido:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CODDOC-001",
-                "codigoDocumento inválido.",
-                campo.motivo or "codigoDocumento inválido.",
-                ("codigoDocumento",),
-            )
-        )
-    elif str(campo.valor) != CODIGO_DOCUMENTO_5050:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CODDOC-001",
-                'codigoDocumento deve ser "5050".',
-                f"codigoDocumento={campo.valor!r}.",
-                ("codigoDocumento",),
-            )
-        )
-
-    campo = cabecalho["dataBase"]
-    if campo.ausente:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-DATABASE-001",
-                "dataBase obrigatória.",
-                "dataBase ausente.",
-                ("dataBase",),
-            )
-        )
-    elif campo.invalido:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-DATABASE-001",
-                "dataBase inválida.",
-                campo.motivo or "dataBase inválida.",
-                ("dataBase",),
-            )
-        )
-
-    campo = cabecalho["codigoConglomerado"]
-    if campo.ausente:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CONGLOMERADO-001",
-                "codigoConglomerado obrigatório.",
-                "codigoConglomerado ausente.",
-                ("codigoConglomerado",),
-            )
-        )
-    elif campo.invalido:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CONGLOMERADO-001",
-                "codigoConglomerado inválido.",
-                campo.motivo or "codigoConglomerado inválido.",
-                ("codigoConglomerado",),
-            )
-        )
-    elif not _PADRAO_CONGLOMERADO.fullmatch(str(campo.valor)):
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CONGLOMERADO-001",
-                'codigoConglomerado deve ser "C" seguido de 7 dígitos.',
-                f"codigoConglomerado={campo.valor!r}.",
-                ("codigoConglomerado",),
-            )
-        )
-
-    campo = cabecalho["cnpj"]
-    if campo.ausente:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CNPJ-001",
-                "cnpj obrigatório.",
-                "cnpj ausente.",
-                ("cnpj",),
-            )
-        )
-    elif campo.invalido:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-CNPJ-001",
-                "cnpj inválido.",
-                campo.motivo or "cnpj inválido.",
-                ("cnpj",),
-            )
-        )
-
-    campo = cabecalho["tipoRemessa"]
-    if campo.ausente:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-REMESSA-001",
-                "tipoRemessa obrigatório.",
-                "tipoRemessa ausente.",
-                ("tipoRemessa",),
-            )
-        )
-    elif campo.invalido:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-REMESSA-001",
-                "tipoRemessa inválido.",
-                campo.motivo or "tipoRemessa inválido.",
-                ("tipoRemessa",),
-            )
-        )
-    elif campo.valor not in TIPOS_REMESSA_VALIDOS:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-REMESSA-001",
-                'tipoRemessa deve ser "I" ou "S".',
-                f"tipoRemessa={campo.valor!r}.",
-                ("tipoRemessa",),
-            )
-        )
-
-    campo = cabecalho["opcaoPorProvisaoAcumulada"]
-    if campo.ausente:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-PROVACUM-001",
-                "opcaoPorProvisaoAcumulada obrigatória.",
-                "opcaoPorProvisaoAcumulada ausente.",
-                ("opcaoPorProvisaoAcumulada",),
-            )
-        )
-    elif campo.invalido:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-PROVACUM-001",
-                "opcaoPorProvisaoAcumulada inválida.",
-                campo.motivo or "opcaoPorProvisaoAcumulada inválida.",
-                ("opcaoPorProvisaoAcumulada",),
-            )
-        )
-    elif campo.valor not in OPCOES_PROVISAO_ACUMULADA_VALIDAS:
-        ocorrencias.append(
-            _erro_cabecalho(
-                "BASE-CAB-PROVACUM-001",
-                'opcaoPorProvisaoAcumulada deve ser "S" ou "N".',
-                f"opcaoPorProvisaoAcumulada={campo.valor!r}.",
-                ("opcaoPorProvisaoAcumulada",),
-            )
-        )
-
-    return ocorrencias
 
 
 def validar_codigo_conglomerado_unicad(
@@ -1303,11 +927,136 @@ def validar_codigo_conglomerado_unicad(
         ("codigoConglomerado",),
     )
 
+# Criticas oficiais extraidas da antiga montagem de eventos.
+def validar_provisao_avaliacao_na(
+    evento: EventoAgrupado,
+) -> list[Ocorrencia]:
+    """DRO001301: tipoAvaliacao=NA nao aceita provisao diferente de zero."""
 
-def cabecalho_tem_data_base_valida(
-    cabecalho: dict[str, CampoNormalizado],
-) -> bool:
-    """Usado por conversion.py para decidir se as etapas dependentes de
-    semestre (P3/consolidacao) podem rodar."""
+    if evento.valor_evento("tipoAvaliacao") != "NA":
+        return []
 
-    return cabecalho["dataBase"].valido
+    ocorrencias: list[Ocorrencia] = []
+    for linha in evento.linhas:
+        campo_provisao = linha.campos["valorProvisao"]
+        if not campo_provisao.valido or campo_provisao.valor == 0:
+            continue
+        ocorrencias.append(
+            Ocorrencia(
+                etapa=ETAPA_PRE_PROCESSAMENTO,
+                tipo=TIPO_ERRO_IMPEDITIVO,
+                codigo="DRO001301",
+                descricao=(
+                    'Para tipoAvalia\u00e7\u00e3o igual a "NA", valores de '
+                    "provis\u00e3o (valorProvisao) n\u00e3o devem ser informados."
+                ),
+                detalhe=(
+                    f"valorProvisao={campo_provisao.valor:.2f} "
+                    "com tipoAvaliacao=NA."
+                ),
+                linhas=(linha.numero_linha,),
+                id_evento=evento.id_evento,
+                campos=("tipoAvaliacao", "valorProvisao"),
+            )
+        )
+    return ocorrencias
+
+
+def validar_contabilizacao_pre(
+    id_evento: str,
+    contabilizacao: Contabilizacao,
+    data_ocorrencia: object | None,
+) -> list[Ocorrencia]:
+    ocorrencias: list[Ocorrencia] = []
+    linhas = (contabilizacao.numero_linha,)
+    if contabilizacao.valor_recuperacao > 0:
+        ocorrencias.append(
+            Ocorrencia(
+                etapa=ETAPA_PRE_PROCESSAMENTO,
+                tipo=TIPO_ERRO_IMPEDITIVO,
+                codigo="DRO001411",
+                descricao=(
+                    "Verifica se o valorRecuperacao \u00e9 menor ou igual a zero. "
+                    "Por conven\u00e7\u00e3o, valores de recupera\u00e7\u00e3o devem ser "
+                    "lan\u00e7ados com sinal negativo."
+                ),
+                detalhe=(
+                    f"valorRecuperacao={contabilizacao.valor_recuperacao:.2f}."
+                ),
+                linhas=linhas,
+                id_evento=id_evento,
+                campos=("valorRecuperacao",),
+            )
+        )
+    fonte = contabilizacao.fonte_recuperacao
+    ocorrencia_valida_a_partir_de_2021 = (
+        isinstance(data_ocorrencia, date)
+        and data_ocorrencia >= DATA_INICIO_2021
+    )
+    if (
+        ocorrencia_valida_a_partir_de_2021
+        and contabilizacao.valor_recuperacao < 0
+        and fonte not in ("S", "O")
+    ):
+        ocorrencias.append(
+            Ocorrencia(
+                etapa=ETAPA_PRE_PROCESSAMENTO,
+                tipo=TIPO_ERRO_IMPEDITIVO,
+                codigo="DRO001421",
+                descricao=(
+                    "Verifica, quando a data de ocorr\u00eancia for maior ou igual "
+                    "a 1.1.2021, se o campo fonteRecuperacao foi devidamene "
+                    "informado quando h\u00e1 lan\u00e7amento referente a valor "
+                    "recuperado."
+                ),
+                detalhe=(
+                    f"dataOcorrencia={data_ocorrencia}, "
+                    f"valorRecuperacao={contabilizacao.valor_recuperacao:.2f}, "
+                    f"fonteRecuperacao={fonte!r}."
+                ),
+                linhas=linhas,
+                id_evento=id_evento,
+                campos=("valorRecuperacao", "fonteRecuperacao"),
+            )
+        )
+    return ocorrencias
+
+
+def validar_referencias_linha_pre(
+    linha: LinhaNormalizada,
+) -> list[Ocorrencia]:
+    ocorrencias: list[Ocorrencia] = []
+    for campo_cosif, campo_conta in (
+        ("contaCosifDebito", "contaBalAnaliticoDebito"),
+        ("contaCosifCredito", "contaBalAnaliticoCredito"),
+    ):
+        valor_cosif = linha.valor(campo_cosif)
+        if valor_cosif is None or linha.valor(campo_conta) is not None:
+            continue
+        if campo_conta == "contaBalAnaliticoDebito":
+            codigo_regra = "DRO001443"
+            descricao_regra = (
+                "Verifica, nos casos em que sejam devidos lan\u00e7amentos no "
+                "campo contaCosifDebito, se h\u00e1 preenchimento do campo "
+                "contaBalAnaliticoDebito correspondente."
+            )
+        else:
+            codigo_regra = "DRO001444"
+            descricao_regra = (
+                "Verifica, nos casos em que sejam devidos lan\u00e7amentos no "
+                "campo contaCosifCredito , se h\u00e1 preenchimento do campo "
+                "contaBalAnaliticoCredito correspondente."
+            )
+        ocorrencias.append(
+            Ocorrencia(
+                etapa=ETAPA_PRE_PROCESSAMENTO,
+                tipo=TIPO_ERRO_IMPEDITIVO,
+                codigo=codigo_regra,
+                descricao=descricao_regra,
+                detalhe=f"{campo_cosif}={valor_cosif!r} sem {campo_conta}.",
+                linhas=(linha.numero_linha,),
+                id_evento=linha.valor("idEvento"),
+                campos=(campo_cosif, campo_conta),
+            )
+        )
+    return ocorrencias

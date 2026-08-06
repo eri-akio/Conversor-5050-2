@@ -22,7 +22,7 @@ from src.conversion import processar
 
 TITULO_JANELA = "Smart Reporting"
 
-# Mesmo esquema de resolucao de caminho usado em src/xml_writer.py: em
+# Mesmo esquema de resolucao de caminho usado em src/xsd_validator.py: em
 # --onefile, os dados ficam em sys._MEIPASS; fora do bundle, __file__ aponta
 # para a arvore de codigo-fonte original.
 if getattr(sys, "frozen", False):

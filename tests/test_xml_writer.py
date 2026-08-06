@@ -7,22 +7,30 @@ from pathlib import Path
 
 import pytest
 from lxml import etree
+import src.xsd_validator as xsd_validator
 
-from src.calculations import (
+from src.builders import (
+    consolidar_eventos,
     construir_mapa_contas,
     construir_mapa_sistemas,
-    montar_evento,
+    montar_evento as construir_evento,
     normalizar_linha_base,
 )
+from src.calculations import classificar_evento
 from src.reader import BASE_COLUNAS
-from src.rules_post import consolidar_eventos
-from src.rules_pre import classificar_evento
 from src.xml_writer import (
     construir_xml,
     salvar_xml,
     serializar_xml,
-    validar_contra_xsd,
 )
+from src.xsd_validator import (
+    ErroTecnicoXSD,
+    validar_xml_contra_xsd,
+)
+
+
+def montar_evento(id_evento, linhas):
+    return construir_evento(id_evento, linhas), []
 
 CABECALHO_VALIDO = {
     "codigoDocumento": "5050",
@@ -113,9 +121,9 @@ def _montar_documento_valido():
 def test_documento_completo_e_valido_no_xsd_06_2025() -> None:
     documento = _montar_documento_valido()
 
-    erros = validar_contra_xsd(documento)
+    erros = validar_xml_contra_xsd(documento)
 
-    assert erros == []
+    assert erros == ()
 
 
 def test_atributos_opcionais_ausentes_sao_omitidos() -> None:
@@ -167,7 +175,7 @@ def test_documento_sem_conta_valida_falha_no_xsd() -> None:
         contas=contas,
     )
 
-    erros = validar_contra_xsd(documento)
+    erros = validar_xml_contra_xsd(documento)
 
     assert erros != []
 
@@ -177,7 +185,16 @@ def test_serializar_xml_produz_bytes_com_declaracao_utf8() -> None:
 
     conteudo = serializar_xml(documento)
 
-    assert conteudo.startswith(b"<?xml version='1.0' encoding='UTF-8'?>")
+    declaracao, _corpo = conteudo.split(b"\n", 1)
+    assert declaracao == b"<?xml version='1.0' encoding='UTF-8'?>"
+    assert b"standalone" not in declaracao
+    assert conteudo.endswith(b"\n")
+    assert [filho.tag for filho in documento] == [
+        "eventosIndividualizados",
+        "eventosConsolidados",
+        "sistemasOrigem",
+        "contasSubtitulosInternos",
+    ]
 
 
 def test_salvar_xml_nao_sobrescreve_arquivo_existente(tmp_path: Path) -> None:
@@ -256,7 +273,7 @@ def test_campos_de_dominio_fechado_saem_maiusculos_no_xml() -> None:
         contas=contas,
     )
 
-    assert validar_contra_xsd(documento) == []
+    assert validar_xml_contra_xsd(documento) == ()
 
     evento_xml = documento.find("eventosIndividualizados/evento")
     assert evento_xml.get("tipoAvaliacao") == "I"
@@ -322,3 +339,18 @@ def test_salvar_xml_remove_temporario_quando_a_gravacao_falha(
 
     assert not caminho.exists()
     assert not caminho.with_name(caminho.name + ".tmp").exists()
+
+
+def test_falha_tecnica_xsd_preserva_causa_original(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    caminho_inexistente = tmp_path / "xsd-inexistente.xsd"
+    monkeypatch.setattr(xsd_validator, "XSD_PATH", caminho_inexistente)
+
+    with pytest.raises(ErroTecnicoXSD) as captura:
+        validar_xml_contra_xsd(_montar_documento_valido())
+
+    erro = captura.value
+    assert erro.caminho_xsd == caminho_inexistente
+    assert isinstance(erro.causa, OSError)
+    assert erro.__cause__ is erro.causa

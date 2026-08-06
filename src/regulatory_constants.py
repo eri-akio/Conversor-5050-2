@@ -1,4 +1,4 @@
-"""Constantes regulatorias compartilhadas entre rules_pre, rules_post e
+"""Constantes regulatorias compartilhadas entre rules_pre, rule_pos e
 calculations, para evitar duplicacao/acoplamento entre os modulos."""
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ LIMIAR_INDIVIDUALIZACAO = Decimal("1000.00")
 LIMIAR_RISCO_NAO_COBERTO = Decimal("10000000.00")
 LIMIAR_EMISSAO_VALOR_TOTAL_RISCO = Decimal("10000000.00")
 
-# Mesmo esquema de resolucao de caminho usado em src/xml_writer.py: em
+# Mesmo esquema de resolucao de caminho usado em src/xsd_validator.py: em
 # --onefile, os dados ficam em sys._MEIPASS; fora do bundle, __file__ aponta
 # para a arvore de codigo-fonte original.
 if getattr(sys, "frozen", False):

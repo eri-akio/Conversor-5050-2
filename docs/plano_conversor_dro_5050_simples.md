@@ -90,6 +90,13 @@ Gerar relatório XLSX
 Salvar XML final somente quando aprovado
 ```
 
+O bloqueio regulatório e a exclusão da consolidação são avaliados por
+`idEvento`. Um evento com erro local impeditivo não executa as críticas
+oficiais dependentes e não contribui para os consolidados; os demais eventos
+seguem normalmente. As verificações `DRO001301`, `DRO001302` e `DRO001452`
+continuam sendo executadas sobre as linhas originais, pois não dependem da
+montagem válida da contabilização.
+
 O relatório será tentado sempre, inclusive quando um erro de dados impedir a
 geração do XML — inclusive quando a própria `dataBase` for inválida (nesse
 caso o nome do relatório usa o sufixo técnico `SEM_DATA_BASE` em vez da
@@ -130,18 +137,21 @@ Comportamento:
 
 ```text
 main.py
-dro5050/
+src/
     models.py
     reader.py
     normalizers.py
     calculations.py
+    builders.py
+    rules_local.py
     rules_pre.py
-    rules_post.py
+    rule_pos.py
+    xsd_validator.py
     xml_writer.py
     report_writer.py
     conversion.py
     gui.py
-resources/
+assets/fonte/
     dro_5050_2025_06.xsd
 tests/
 ```
@@ -624,17 +634,12 @@ campos estiver ausente, ocorre `BASE-CONT-OBR-001`.
 contrato mais estrito da planilha — não é uma reprodução do XSD nem de
 uma crítica oficial, e deve ser lida como tal.
 
-### Sinal da perda contabilizada
+### Estornos de perda
 
-```text
-valorPerdaEfetiva < 0
-→ BASE-SINAL-CONT-001
-```
-
-Essa é uma regra local baseada nas Instruções de Preenchimento: a perda
-efetiva contabilizada usa sempre sinal positivo. É avaliada por linha de
-contabilização, independentemente do agrupamento por `idEvento`, e não deve
-ser confundida com a convenção de sinal dos totais do evento (seção 15).
+Movimentos negativos de `valorPerdaEfetiva` sao aceitos como estornos. Nao
+existe rejeicao local absoluta por linha. A conformidade e avaliada pelas
+criticas oficiais sobre o saldo acumulado (`DRO000023`) e o total final
+(`DRO000011`, com o limite oficial de `-10,00`).
 
 ### Provisão
 
@@ -702,20 +707,14 @@ nenhuma das duas críticas abaixo.
 Evento exclusivamente de risco não possui contabilizações em nenhuma linha.
 Se possuir informações contábeis, será gerada `DRO001452`.
 
-Evento com perda, provisão ou recuperação (portanto não exclusivamente de
-risco) deve possuir os campos contábeis aplicáveis, conforme `DRO001451`.
-Duas checagens: (1) uma rede de segurança de consistência interna (totais
-não-zero sem nenhuma contabilização — matematicamente inatingível a
-partir de dados reais); (2) por contabilização, quando há movimento
-(perda, provisão ou recuperação diferente de zero), os **dois pares de
-conta precisam estar completos** — débito (`contaBalAnaliticoDebito` +
-`contaCosifDebito`) e crédito (`contaBalAnaliticoCredito` +
-`contaCosifCredito`). Ter só um dos dois pares não é suficiente: o XML de
-exemplo oficial (`DRO - Modelo XML do Documento 5050 - Exemplo.xml`)
-sempre preenche as 4 contas juntas em toda contabilização, nunca só um
-lado — consistente com partida dobrada (todo lançamento tem débito e
-crédito). O XSD aceita as 4 contas como opcionais (não pega isso), então
-a responsabilidade é local.
+Evento com perda, provisao ou recuperacao (portanto nao exclusivamente de
+risco) deve possuir os campos contabeis aplicaveis, conforme `DRO001451`.
+Para nao ampliar a descricao oficial com base apenas no XML de exemplo, a
+implementacao exige ao menos um par correspondente completo (conta interna +
+COSIF, de debito ou de credito). Assimetrias dentro de cada par continuam
+cobertas por `DRO001441` a `DRO001444`. A obrigatoriedade simultanea dos dois
+lados somente devera ser introduzida se houver matriz regulatoria explicita
+por tipo de movimento.
 
 ## 13. Sistemas de origem e contas internas
 
@@ -833,23 +832,13 @@ senão
 Para `M` e `NA`, `valorTotalRisco` também será omitido. Não será criado
 `valorTotalRisco="0.00"` quando o atributo não for aplicável.
 
-### Convenção de sinal dos totais do evento
+### Convencao de sinal dos totais do evento
 
-```text
-totalPerdaEfetiva < 0
-OU totalProvisao < 0
-OU totalRecuperado > 0
-OU (valorTotalRisco informado E valorTotalRisco < 0)
-→ BASE-SINAL-EVENTO-001
-```
-
-Regra local baseada nas Instruções de Preenchimento, avaliada sobre os
-totais já calculados do evento agrupado. Reprova qualquer violação de sinal,
-inclusive valores entre `-10,00` e `0,00` que não acionam `DRO000011`/
-`DRO000012` (seção 18) — as duas críticas coexistem sem se misturar:
-`BASE-SINAL-EVENTO-001` cobre qualquer sinal inválido, e `DRO000011`/
-`DRO000012` continuam sendo avaliadas separadamente, como críticas oficiais
-próprias, pelo limiar específico de `-10,00`.
+Os totais nao recebem uma critica local adicional de sinal. Perda e provisao
+negativas sao avaliadas por `DRO000011`, `DRO000012`, `DRO000023` e
+`DRO000024`; recuperacao positiva e avaliada por `DRO000013` e pelas criticas
+de pre-processamento aplicaveis. Isso preserva estornos legitimos e os
+limites oficiais sem ampliar a condicao regulatoria.
 
 ### DRO001241
 
@@ -905,17 +894,14 @@ provisaoTotalConsol
 provisaoSemestreConsol
 ```
 
-- quantidades contam `idEvento`, não linhas;
+- quantidades contam `idEvento`, nao linhas;
 - valores totais somam uma vez por evento;
-- valores do semestre vinculam o evento a um único semestre: o da sua
-  **primeira** `dataContabilizacao` válida (não "qualquer semestre em que
-  o evento tenha alguma contabilização" — um evento recorrente, com
-  contabilizações em vários semestres, só conta uma vez, no semestre de
-  origem). Quando a primeira contabilização cai dentro do semestre da
-  `dataBase`, soma-se o total acumulado de **todas** as contabilizações do
-  evento (mesmo espírito de `perdaEfetivaTotalConsol`/`provisaoTotalConsol`,
-  mas vinculado a 1 semestre), não só as que caem dentro do período;
-- não serão criados eventos consolidados fictícios para satisfazer o XSD.
+- `numEventosSemestreConsol` vincula cada evento ao semestre da primeira
+  `dataContabilizacao` valida;
+- `perdaEfetivaSemestreConsol` e `provisaoSemestreConsol` somam somente os
+  movimentos cuja `dataContabilizacao` esta dentro do semestre da `dataBase`,
+  preservando constituicoes, reversoes e estornos do periodo;
+- nao sao criados eventos consolidados ficticios para satisfazer o XSD.
 
 ### Datas de evento posteriores ao período da data-base
 
@@ -1074,9 +1060,7 @@ de saída do XML.
 | `BASE-PROB-001` | probabilidade e valor de risco incompletos |
 | `BASE-PROB-002` | probabilidade informada para avaliação `NA` |
 | `BASE-PROB-003` | probabilidade repetida ou mais de três no evento |
-| `BASE-SINAL-CONT-001` | perda contabilizada (`valorPerdaEfetiva`) informada com sinal negativo |
 | `BASE-CONT-OBR-001` | contabilização iniciada sem `dataContabilizacao`, `valorPerdaEfetiva`, `valorProvisao` ou `valorRecuperacao` |
-| `BASE-SINAL-EVENTO-001` | totais do evento agrupado violam a convenção de sinal |
 | `BASE-COSIF-FORM-001` | COSIF não possui 8 ou 10 dígitos |
 | `BASE-REC-FONTE-001` | fonte `S/O` sem recuperação efetiva |
 | `BASE-CONT-SEM-MOV-001` | contabilização com os três movimentos zerados |
@@ -1186,10 +1170,15 @@ visual, não substitui o texto.
 | Eventos com inconsistência | quantidade de `idEvento` distintos afetados |
 | Erros impeditivos | ocorrências que bloqueiam a validação |
 | Avisos | ocorrências que exigem análise sem bloquear |
+| Falhas tecnicas | ocorrencias de infraestrutura com tipo `FALHA TECNICA` |
 | Erros XSD | ocorrências da etapa de validação XSD |
+| Regras nao executadas | quantidade de criticas externas/historicas sem insumo local |
+| Codigos nao executados | lista explicita dessas criticas; nao equivale a aprovacao |
 
-Um erro XSD também integra o total e os erros impeditivos; o indicador
-específico apenas destaca sua origem.
+Uma rejeicao `XSD-001` integra os erros impeditivos. Falhas de carga do
+schema, geracao do XML ou gravacao de arquivo usam `FALHA TECNICA` e etapas
+proprias, evitando que erros de infraestrutura sejam contados como rejeicoes
+XSD.
 
 ### Aba `Inconsistencias`
 
@@ -1214,6 +1203,8 @@ Normalização
 Agrupamento e cálculos
 Pré-processamento
 Pós-processamento
+Geração do XML
+Gravação de arquivo
 Validação XSD
 ```
 

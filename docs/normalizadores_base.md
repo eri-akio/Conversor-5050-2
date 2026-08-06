@@ -242,34 +242,19 @@ normalize_bacen_id
 
 ### `idEvento`
 
-Os XSDs fornecidos aceitam texto alfanumérico de 1 a 40 caracteres. Na
-entrada Excel, hifens são aceitos exclusivamente como separadores entre
-blocos alfanuméricos e são removidos antes da validação final.
-
-Exemplo válido:
+Por decisao local mantida pelo projeto, todos os hifens de `idEvento` sao
+removidos antes do agrupamento e da validacao alfanumerica final:
 
 ```text
-ORLD-1234 → ORLD1234
-ABC-12-XYZ → ABC12XYZ
+ORLD-1234 -> ORLD1234
+IND--0001 -> IND0001
 ```
 
-Exemplo inválido:
-
-```text
--ORLD1234
-ORLD1234-
-ORLD--1234
-ORLD@1234
-```
-
-A transformação válida gera a ocorrência informativa
-`NORM-ID-EVENTO-001`, com o valor original e o normalizado preservados
-internamente. A mesma política é aplicada a `idEventoAgregador`.
-
-Após a transformação, o valor deve continuar alfanumérico e possuir entre 1
-e 40 caracteres. Colisões entre origens distintas são bloqueadas durante o
-agrupamento; por exemplo, `IND-0001` e `IND0001` não podem ser reunidos no
-mesmo evento.
+O valor original permanece em `CampoNormalizado.valor_original`. Colisoes
+entre origens distintas sao erros impeditivos (`BASE-IDEVENTO-COLISAO-001`);
+por exemplo, `IND-0001` e `IND0001` nao podem ser reunidos silenciosamente.
+Depois da remocao, o valor deve ser alfanumerico e possuir de 1 a 40
+caracteres.
 
 ### `idBacen`
 

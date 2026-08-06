@@ -9,23 +9,38 @@ from pathlib import Path
 
 from lxml import etree
 
-from src.calculations import (
-    CODIGOS_FORMATO_QUE_SUPRIMEM_REGRAS,
+from src.builders import (
     agrupar_linhas_por_evento,
     construir_mapa_contas,
     construir_mapa_sistemas,
-    detectar_colisoes_id_evento,
+    consolidar_eventos,
     montar_evento,
     normalizar_linha_base,
-    validar_sistemas_e_contas,
 )
+from src.calculations import classificar_evento
 from src.models import (
+    ETAPA_GERACAO_XML,
+    ETAPA_GRAVACAO_ARQUIVO,
     ETAPA_XSD,
     Ocorrencia,
     ResultadoConversao,
     TIPO_ERRO_IMPEDITIVO,
+    TIPO_FALHA_TECNICA,
 )
-from src.normalizers import detectar_ausencia_e_invalidez
+from src.rules_local import (
+    cabecalho_tem_data_base_valida,
+    detectar_colisoes_id_evento,
+    detectar_ausencia_e_invalidez,
+    validar_cabecalho,
+    validar_contabilizacao_antes_pre,
+    validar_contabilizacao_depois_pre,
+    validar_datas_apos_data_base,
+    validar_estrutura_evento,
+    validar_evento_local,
+    validar_referencias_linha,
+    validar_sistemas_e_contas_globais,
+    validar_totais_evento,
+)
 from src.reader import (
     ArquivoInvalido,
     PlanilhaInvalida,
@@ -33,25 +48,27 @@ from src.reader import (
     ler_planilha,
 )
 from src.report_writer import gerar_relatorio
-from src.rules_post import (
-    consolidar_eventos,
+from src.rule_pos import (
     validar_consolidado,
-    validar_datas_apos_data_base,
+    validar_evento as validar_evento_pos,
 )
-from src.rules_post import validar_evento as validar_evento_pos
 from src.rules_pre import (
-    cabecalho_tem_data_base_valida,
-    classificar_evento,
-    validar_cabecalho,
+    validar_contabilizacao_pre,
     validar_codigo_conglomerado_unicad,
     validar_contas_referenciadas,
-    validar_evento,
-    validar_formatos_e_dominios_evento,
+    validar_evento as validar_evento_pre,
+    validar_evento_apenas_risco,
+    validar_provisao_avaliacao_na,
     validar_provisao_avaliacao_im,
+    validar_referencias_linha_pre,
     validar_sistema_referenciado,
     validar_unicidade_do_documento,
 )
-from src.xml_writer import construir_xml, salvar_xml, validar_contra_xsd
+from src.xml_writer import construir_xml, salvar_xml
+from src.xsd_validator import (
+    ErroTecnicoXSD,
+    validar_xml_contra_xsd,
+)
 
 STATUS_APROVADO = "APROVADO"
 STATUS_REPROVADO = "REPROVADO"
@@ -60,10 +77,16 @@ STATUS_NAO_EXECUTADO = "NÃO EXECUTADO"
 DATA_BASE_INDISPONIVEL = "SEM_DATA_BASE"
 
 
-def _ocorrencia_falha_tecnica(codigo: str, descricao: str, detalhe: str) -> Ocorrencia:
+def _ocorrencia_falha_tecnica(
+    codigo: str,
+    descricao: str,
+    detalhe: str,
+    *,
+    etapa: str,
+) -> Ocorrencia:
     return Ocorrencia(
-        etapa=ETAPA_XSD,
-        tipo=TIPO_ERRO_IMPEDITIVO,
+        etapa=etapa,
+        tipo=TIPO_FALHA_TECNICA,
         codigo=codigo,
         descricao=descricao,
         detalhe=detalhe,
@@ -166,57 +189,126 @@ def processar(
         )
         for indice, linha in enumerate(planilha.linhas_base())
     ]
+    id_evento_por_linha = {
+        linha.numero_linha: linha.valor("idEvento")
+        for linha in linhas_normalizadas
+    }
+    ocorrencias_locais_por_evento: dict[str, list[Ocorrencia]] = {}
+
+    def registrar_ocorrencias_locais(
+        novas_ocorrencias: list[Ocorrencia],
+    ) -> None:
+        ocorrencias.extend(novas_ocorrencias)
+        for ocorrencia in novas_ocorrencias:
+            ids_afetados: list[str] = []
+            if ocorrencia.id_evento is not None:
+                ids_afetados.append(str(ocorrencia.id_evento))
+            for numero_linha in ocorrencia.linhas:
+                id_afetado = id_evento_por_linha.get(numero_linha)
+                if id_afetado is not None and str(id_afetado) not in ids_afetados:
+                    ids_afetados.append(str(id_afetado))
+            for id_afetado in ids_afetados:
+                ocorrencias_locais_por_evento.setdefault(id_afetado, []).append(
+                    ocorrencia
+                )
 
     for linha in linhas_normalizadas:
         id_evento = linha.valor("idEvento")
-        ocorrencias.extend(
+        registrar_ocorrencias_locais(
             detectar_ausencia_e_invalidez(
                 linha.campos, linha.numero_linha, id_evento
             )
         )
 
-    ocorrencias.extend(validar_sistemas_e_contas(linhas_normalizadas))
-    ocorrencias.extend(detectar_colisoes_id_evento(linhas_normalizadas))
+    for linha in linhas_normalizadas:
+        registrar_ocorrencias_locais(validar_referencias_linha(linha))
+    registrar_ocorrencias_locais(
+        validar_sistemas_e_contas_globais(linhas_normalizadas)
+    )
+    registrar_ocorrencias_locais(
+        detectar_colisoes_id_evento(linhas_normalizadas)
+    )
 
     sistemas = construir_mapa_sistemas(linhas_normalizadas)
     contas = construir_mapa_contas(linhas_normalizadas)
 
     grupos = agrupar_linhas_por_evento(linhas_normalizadas)
     eventos = {}
-    eventos_com_erro_formato: set[str] = set()
+    eventos_bloqueados_consolidacao: set[str] = set()
     for id_evento, linhas_do_evento in grupos.items():
-        evento, ocorrencias_evento = montar_evento(id_evento, linhas_do_evento)
+        evento = montar_evento(id_evento, linhas_do_evento)
         eventos[id_evento] = evento
-        ocorrencias.extend(ocorrencias_evento)
+        inicio_ocorrencias_evento = len(ocorrencias)
 
-        erro_formato_na_montagem = any(
-            o.codigo in CODIGOS_FORMATO_QUE_SUPRIMEM_REGRAS
-            for o in ocorrencias_evento
-        )
-
+        ocorrencias_montagem = validar_estrutura_evento(evento)
         if evento.consistente:
+            for contabilizacao in evento.contabilizacoes:
+                ocorrencias_montagem.extend(
+                    validar_contabilizacao_antes_pre(id_evento, contabilizacao)
+                )
+                ocorrencias_montagem.extend(
+                    validar_contabilizacao_depois_pre(id_evento, contabilizacao)
+                )
+            ocorrencias_montagem.extend(validar_totais_evento(evento))
+        ocorrencias.extend(ocorrencias_montagem)
+
+        ocorrencias_locais_evento = [
+            *ocorrencias_locais_por_evento.get(id_evento, ()),
+            *ocorrencias_montagem,
+        ]
+
+        # DRO001301 e DRO001302 precisam enxergar as linhas originais, mesmo
+        # quando outra falha local torna a estrutura inadequada as demais regras.
+        if evento.consistente:
+            ocorrencias.extend(validar_provisao_avaliacao_na(evento))
             ocorrencia_provisao = validar_provisao_avaliacao_im(evento)
             if ocorrencia_provisao is not None:
                 ocorrencias.append(ocorrencia_provisao)
+            ocorrencia_apenas_risco = validar_evento_apenas_risco(evento)
+            if ocorrencia_apenas_risco is not None:
+                ocorrencias.append(ocorrencia_apenas_risco)
 
-            ocorrencias_formato = validar_formatos_e_dominios_evento(evento)
-            ocorrencias.extend(ocorrencias_formato)
+        resultado_local = validar_evento_local(
+            evento, ocorrencias_locais_evento
+        )
+        ocorrencias.extend(resultado_local.ocorrencias)
+        if resultado_local.bloqueia_consolidacao:
+            eventos_bloqueados_consolidacao.add(id_evento)
 
-            tem_erro_formato = erro_formato_na_montagem or bool(ocorrencias_formato)
+        if (
+            not evento.consistente
+            or resultado_local.bloqueia_regras_regulatorias
+        ):
+            if any(
+                ocorrencia.tipo == TIPO_ERRO_IMPEDITIVO
+                for ocorrencia in ocorrencias[inicio_ocorrencias_evento:]
+            ):
+                eventos_bloqueados_consolidacao.add(id_evento)
+            continue
 
-            if not tem_erro_formato:
-                ocorrencias.extend(validar_evento(evento))
-                ocorrencias.extend(validar_evento_pos(evento))
-                ocorrencia_sistema = validar_sistema_referenciado(evento, sistemas)
-                if ocorrencia_sistema is not None:
-                    ocorrencias.append(ocorrencia_sistema)
-                ocorrencias.extend(validar_contas_referenciadas(evento, contas))
-                if data_base_valida:
-                    ocorrencias.extend(
-                        validar_datas_apos_data_base(evento, data_base)
-                    )
-            else:
-                eventos_com_erro_formato.add(id_evento)
+        for linha in evento.linhas:
+            ocorrencias.extend(validar_referencias_linha_pre(linha))
+        data_ocorrencia = evento.valor_evento("dataOcorrencia")
+        for contabilizacao in evento.contabilizacoes:
+            ocorrencias.extend(
+                validar_contabilizacao_pre(
+                    id_evento, contabilizacao, data_ocorrencia
+                )
+            )
+        ocorrencias.extend(validar_evento_pre(evento))
+        ocorrencias.extend(validar_evento_pos(evento))
+        ocorrencia_sistema = validar_sistema_referenciado(evento, sistemas)
+        if ocorrencia_sistema is not None:
+            ocorrencias.append(ocorrencia_sistema)
+        ocorrencias.extend(validar_contas_referenciadas(evento, contas))
+        if data_base_valida:
+            ocorrencias.extend(validar_datas_apos_data_base(evento, data_base))
+
+        if any(
+            ocorrencia.tipo == TIPO_ERRO_IMPEDITIVO
+            for ocorrencia in ocorrencias[inicio_ocorrencias_evento:]
+        ):
+            eventos_bloqueados_consolidacao.add(id_evento)
 
     ocorrencias.extend(validar_unicidade_do_documento(eventos))
 
@@ -225,7 +317,7 @@ def processar(
         eventos_para_consolidar = {
             id_evento: evento
             for id_evento, evento in eventos.items()
-            if id_evento not in eventos_com_erro_formato
+            if id_evento not in eventos_bloqueados_consolidacao
         }
         consolidados = consolidar_eventos(eventos_para_consolidar, data_base)
         for consolidado in consolidados.values():
@@ -265,34 +357,27 @@ def processar(
                     "XML-TEC-001",
                     "Não foi possível construir o XML.",
                     str(erro),
+                    etapa=ETAPA_GERACAO_XML,
                 )
             )
 
         if documento_xml is not None:
             try:
-                erros_xsd = validar_contra_xsd(documento_xml)
-            except (OSError, etree.LxmlError) as erro:
+                ocorrencias_xsd = validar_xml_contra_xsd(documento_xml)
+            except ErroTecnicoXSD as erro:
                 status_xsd = STATUS_FALHA_TECNICA
                 ocorrencias.append(
                     _ocorrencia_falha_tecnica(
                         "XSD-TEC-001",
                         "Não foi possível carregar ou compilar o XSD 06/2025.",
                         str(erro),
+                    etapa=ETAPA_XSD,
                     )
                 )
             else:
-                if erros_xsd:
+                if ocorrencias_xsd:
                     status_xsd = STATUS_REPROVADO
-                    ocorrencias.extend(
-                        Ocorrencia(
-                            etapa=ETAPA_XSD,
-                            tipo=TIPO_ERRO_IMPEDITIVO,
-                            codigo="XSD-001",
-                            descricao="XML incompatível com o XSD 06/2025.",
-                            detalhe=erro,
-                        )
-                        for erro in erros_xsd
-                    )
+                    ocorrencias.extend(ocorrencias_xsd)
                 else:
                     try:
                         salvar_xml(documento_xml, caminho_xml)
@@ -303,6 +388,7 @@ def processar(
                                 "ARQ-TEC-001",
                                 "Não foi possível gravar o arquivo XML final.",
                                 str(erro),
+                                etapa=ETAPA_GRAVACAO_ARQUIVO,
                             )
                         )
                     else:

@@ -149,19 +149,10 @@ python -m pytest tests/test_event_financial_validator.py -v
 5.7 — Ler e validar as tabelas de sistemas e contas internas
 ```
 
-## 13. Precedência da convenção de sinal
+## 13. Convencao de sinal e estornos
 
-As instruções exigem perda e provisão com sinal positivo, enquanto
-`DRO000011` e `DRO000012` utilizam o limite `-10`.
-
-O projeto preserva as duas verificações sem misturá-las:
-
-```text
-BASE-SINAL-EVENTO-001 → reprova qualquer valor negativo
-DRO000011/12          → aplicam exatamente o limite inferior a -10
-```
-
-Pela precedência documental, um total negativo não é considerado aprovado
-apenas por estar entre `-10,00` e `0,00`. A divergência está registrada como
-`CONF-024`.
+Movimentos negativos de perda e provisao podem representar estornos. O
+projeto nao cria uma rejeicao local absoluta: aplica os limites finais de
+`DRO000011`/`DRO000012` e os saldos acumulados de
+`DRO000023`/`DRO000024`.
 

@@ -1,19 +1,18 @@
 """Testes da Fase 6: consolidacao e criticas locais de pos-processamento
-(src/rules_post.py)."""
+(src/rule_pos.py)."""
 
 from __future__ import annotations
 
 from decimal import Decimal
 
-from src.calculations import montar_evento, normalizar_linha_base
+from src.builders import consolidar_eventos, montar_evento, normalizar_linha_base
 from src.reader import BASE_COLUNAS
+from src.rules_local import validar_datas_apos_data_base
 from src.rules_pre import validar_categoria_nivel2_obrigatoria
-from src.rules_post import (
-    consolidar_eventos,
+from src.rule_pos import (
     validar_categorias_compativeis,
     validar_contabilizacao_anterior_a_descoberta,
     validar_contingencia_individual_sem_probabilidade,
-    validar_datas_apos_data_base,
     validar_evento,
     validar_fraude_com_provisao,
     validar_media_semestral,
@@ -59,8 +58,7 @@ def _linha(numero_linha: int, **sobrescritas: object):
 
 
 def _evento(id_evento: str, linhas: list):
-    evento, _ = montar_evento(id_evento, linhas)
-    return evento
+    return montar_evento(id_evento, linhas)
 
 
 def test_pr_com_provisao_zero_gera_dro000004() -> None:
@@ -93,6 +91,44 @@ def test_po_com_risco_zero_gera_dro000005() -> None:
     evento = _evento("EVT-1", linhas)
 
     assert validar_po_re_com_risco_zero(evento).codigo == "DRO000005"
+
+
+def test_dro000004_nao_dispara_para_avaliacao_massificada() -> None:
+    evento = _evento(
+        "EVT-1",
+        [
+            _linha(
+                2,
+                tipoAvaliacao="M",
+                naturezaContingencia="TRI",
+                probabilidadePerda="PR",
+                valorRisco=100,
+                dataContabilizacao="2025-06-15",
+                valorPerdaEfetiva=0,
+                valorProvisao=0,
+                valorRecuperacao=0,
+            )
+        ],
+    )
+
+    assert validar_pr_com_provisao_zero(evento) is None
+
+
+def test_dro000005_nao_dispara_para_avaliacao_massificada() -> None:
+    evento = _evento(
+        "EVT-1",
+        [
+            _linha(
+                2,
+                tipoAvaliacao="M",
+                naturezaContingencia="TRI",
+                probabilidadePerda="PO",
+                valorRisco=0,
+            )
+        ],
+    )
+
+    assert validar_po_re_com_risco_zero(evento) is None
 
 
 def test_contingencia_individual_sem_probabilidade_gera_dro000003() -> None:
@@ -271,6 +307,26 @@ def test_recuperacao_acima_do_limite_gera_dro000014() -> None:
     evento = _evento("EVT-1", linhas)
 
     assert validar_recuperacao_dentro_do_limite(evento).codigo == "DRO000014"
+
+
+def test_dro000014_usa_soma_literal_sem_modulo_na_perda_bruta() -> None:
+    evento = _evento(
+        "EVT-1",
+        [
+            _linha(
+                2,
+                dataContabilizacao="2025-06-15",
+                valorPerdaEfetiva=-5,
+                valorProvisao=0,
+                valorRecuperacao=-1,
+                fonteRecuperacao="S",
+            )
+        ],
+    )
+
+    ocorrencia = validar_recuperacao_dentro_do_limite(evento)
+    assert ocorrencia is not None
+    assert ocorrencia.codigo == "DRO000014"
 
 
 def test_totais_sempre_batem_com_contabilizacoes_por_construcao() -> None:
@@ -502,13 +558,7 @@ def test_consolidar_eventos_semestre_diferente_nao_conta_no_semestre() -> None:
     assert consolidado.perda_efetiva_semestre == Decimal("0.00")
 
 
-def test_consolidar_eventos_vincula_ao_semestre_da_primeira_contabilizacao() -> (
-    None
-):
-    """Secao 5: evento com contabilizacoes em dois semestres conta uma
-    unica vez, no semestre da PRIMEIRA contabilizacao (nao em qualquer
-    semestre em que tenha alguma contabilizacao)."""
-
+def test_consolidar_eventos_separa_quantidade_e_valores_do_semestre() -> None:
     linhas = [
         _linha(
             2,
@@ -532,14 +582,40 @@ def test_consolidar_eventos_vincula_ao_semestre_da_primeira_contabilizacao() -> 
     consolidados_1s = consolidar_eventos(eventos, "2025-06")
     consolidados_2s = consolidar_eventos(eventos, "2025-12")
 
-    # Conta no 1o semestre (primeira contabilizacao = 2025-06-15), com o
-    # total acumulado de TODAS as contabilizacoes (nao so as do semestre).
     assert consolidados_1s["1"].num_eventos_semestre == 1
-    assert consolidados_1s["1"].perda_efetiva_semestre == Decimal("30.00")
-
-    # Nao conta de novo no 2o semestre, mesmo tendo uma contabilizacao la.
+    assert consolidados_1s["1"].perda_efetiva_semestre == Decimal("10.00")
     assert consolidados_2s["1"].num_eventos_semestre == 0
-    assert consolidados_2s["1"].perda_efetiva_semestre == Decimal("0.00")
+    assert consolidados_2s["1"].perda_efetiva_semestre == Decimal("20.00")
+
+
+def test_consolidado_semestral_soma_apenas_movimentos_do_periodo() -> None:
+    linhas = [
+        _linha(
+            2,
+            idEvento="EVT-1",
+            dataContabilizacao="2024-12-20",
+            valorPerdaEfetiva=0,
+            valorProvisao=700,
+            valorRecuperacao=0,
+        ),
+        _linha(
+            3,
+            idEvento="EVT-1",
+            dataContabilizacao="2025-02-10",
+            valorPerdaEfetiva=30,
+            valorProvisao=200,
+            valorRecuperacao=0,
+        ),
+    ]
+    consolidados = consolidar_eventos(
+        {"EVT-1": _evento("EVT-1", linhas)}, "2025-06"
+    )
+
+    consolidado = consolidados["1"]
+    assert consolidado.num_eventos_semestre == 0
+    assert consolidado.perda_efetiva_semestre == Decimal("30.00")
+    assert consolidado.provisao_semestre == Decimal("200.00")
+    assert consolidado.provisao_total == Decimal("900.00")
 
 
 def test_media_semestral_acima_do_limite_gera_dro000001() -> None:

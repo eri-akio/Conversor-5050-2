@@ -9,11 +9,13 @@ import pytest
 from openpyxl import load_workbook
 
 from src.models import (
+    ETAPA_GERACAO_XML,
     ETAPA_PRE_PROCESSAMENTO,
     ETAPA_XSD,
     Ocorrencia,
     TIPO_AVISO,
     TIPO_ERRO_IMPEDITIVO,
+    TIPO_FALHA_TECNICA,
 )
 from src.report_writer import gerar_relatorio
 
@@ -80,7 +82,12 @@ def test_aba_resumo_contem_status_e_indicadores(tmp_path: Path) -> None:
     assert valores["Eventos com inconsistência"] == 2
     assert valores["Erros impeditivos"] == 2
     assert valores["Avisos"] == 1
+    assert valores["Falhas t\u00e9cnicas"] == 0
     assert valores["Erros XSD"] == 1
+    assert valores["Regras não executadas"] == 9
+    codigos_nao_executados = valores["Códigos não executados"]
+    assert "DRO001002" in codigos_nao_executados
+    assert "DRO000030" in codigos_nao_executados
 
 
 def test_aba_inconsistencias_tem_cabecalho_e_uma_linha_por_ocorrencia(
@@ -203,3 +210,32 @@ def test_relatorio_nao_sobrescreve_arquivo_existente(tmp_path: Path) -> None:
         )
 
     assert caminho.read_bytes() == b"conteudo previo"
+
+def test_falha_de_geracao_xml_nao_e_contada_como_erro_xsd(
+    tmp_path: Path,
+) -> None:
+    caminho = tmp_path / "relatorio.xlsx"
+    gerar_relatorio(
+        caminho,
+        status_local="APROVADO",
+        status_xsd="FALHA T\u00c9CNICA",
+        ocorrencias=[
+            _ocorrencia(
+                codigo="XML-TEC-001",
+                etapa=ETAPA_GERACAO_XML,
+                tipo=TIPO_FALHA_TECNICA,
+                id_evento=None,
+                linhas=(),
+            )
+        ],
+    )
+
+    aba = load_workbook(caminho)["Resumo"]
+    valores = {
+        linha[0]: linha[1]
+        for linha in aba.iter_rows(values_only=True)
+        if linha and linha[0]
+    }
+    assert valores["Falhas t\u00e9cnicas"] == 1
+    assert valores["Erros impeditivos"] == 0
+    assert valores["Erros XSD"] == 0
