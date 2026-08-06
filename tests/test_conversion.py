@@ -459,6 +459,29 @@ def test_tipo_avaliacao_ie_me_e_aceito_e_emitido_sem_conversao_no_xml(
     assert f'tipoAvaliacao="{valor}"' in conteudo_xml
 
 
+def test_natureza_contingencia_out_e_aceita_e_emitida_sem_conversao_no_xml(
+    tmp_path: Path,
+) -> None:
+    """Instrucao 12/2026: naturezaContingencia tambem aceita OUT (outras
+    contingencias). Por decisao do usuario, mesmo tratamento dado a IE/ME:
+    aceito incondicionalmente e emitido no XML tal como informado, sem
+    bloquear o status de aprovacao (diverge da politica mais cautelosa
+    registrada em CONF-003/VER-001 em docs/conflitos_documentais.md)."""
+    caminho_planilha = _construir_planilha_valida_com_evento(
+        tmp_path, naturezaContingencia="OUT"
+    )
+
+    resultado = processar(caminho_planilha, tmp_path / "saida")
+
+    codigos = {o.codigo for o in resultado.ocorrencias}
+    assert "BASE-NATUREZA-FORM-001" not in codigos
+    assert resultado.status_local == "APROVADO"
+    assert resultado.status_xsd == "APROVADO"
+    assert resultado.caminho_xml is not None
+    conteudo_xml = resultado.caminho_xml.read_text(encoding="utf-8")
+    assert 'naturezaContingencia="OUT"' in conteudo_xml
+
+
 # NOTA: validar_natureza_contingencia_avaliacao (BASE-CONT-001) ainda nao e
 # chamada por nenhum orquestrador (validar_estrutura_evento/validar_evento_local
 # em src/rules_local.py, nem conversion.py) -- e uma regra pronta mas ainda

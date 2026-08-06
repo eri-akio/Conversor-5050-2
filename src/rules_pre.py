@@ -28,7 +28,7 @@ from src.regulatory_constants import (
 
 LIMIAR_MATERIALIDADE = Decimal("1000000.00")
 
-NATUREZAS_CONTINGENCIA = frozenset({"TRI", "TRA", "CIV"})
+NATUREZAS_CONTINGENCIA = frozenset({"TRI", "TRA", "CIV", "OUT"})
 
 
 def _erro(

@@ -223,6 +223,20 @@ O valor `OUT` é exigido pela instrução nova em determinadas situações, mas 
 - registrar `CONF-003`;
 - classificar o resultado como `NÃO APTO PARA ENVIO`.
 
+### Status: decisão de negócio substituiu a decisão provisória acima
+
+A decisão provisória descrita nesta seção **não foi a implementada**. Por
+decisão explícita do usuário (mesmo tratamento dado a `IE`/`ME` em
+`CONF-002`), o sistema aceita `OUT` **incondicionalmente** (sem gating por
+`dataBase >= 2026-12`) e o emite no XML tal como informado, **sem** bloquear
+o status de aprovação — mesmo com o XSD 06/2025 fornecido só declarando
+`TRI|TRA|CIV|NA`. A regra "nunca transformar `OUT` em `NA`" continua
+valendo (nenhuma conversão é feita). Diferente de `IE`/`ME`, `OUT` foi
+incluído no conjunto `NATUREZAS_CONTINGENCIA` (`src/rules_local.py` e
+`src/rules_pre.py`), então é tratado como natureza real pelas regras
+existentes (`DRO001233`, `BASE-CONT-001`). Ver
+`docs/matriz_campos.md` (linha do campo `naturezaContingencia`).
+
 ---
 
 ## `CONF-004` — `idEventoAgregador` ausente no XSD

@@ -26,7 +26,7 @@ from src.normalizers import (
     colapsar_espacos_para_validacao,
 )
 
-NATUREZAS_CONTINGENCIA = frozenset({"TRI", "TRA", "CIV"})
+NATUREZAS_CONTINGENCIA = frozenset({"TRI", "TRA", "CIV", "OUT"})
 _PADRAO_ID_EVENTO = re.compile(r"^[0-9A-Za-z]{1,40}$")
 _PADRAO_CATEGORIA_NIVEL1 = re.compile(r"^[1-8]$")
 _PADRAO_CATEGORIA_NIVEL2 = re.compile(
@@ -416,7 +416,7 @@ def validar_formatos_e_dominios_evento(
     if ok and str(valor) not in NATUREZAS_CONTINGENCIA_VALIDAS:
         ocorrencias.append(_erro(
             evento, "BASE-NATUREZA-FORM-001",
-            "naturezaContingencia deve ser TRI, TRA, CIV ou NA.",
+            "naturezaContingencia deve ser TRI, TRA, CIV, OUT ou NA.",
             f"naturezaContingencia={valor!r}.", ("naturezaContingencia",),
         ))
 

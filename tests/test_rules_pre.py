@@ -164,10 +164,33 @@ def test_natureza_tri_com_avaliacao_ie_me_gera_base_cont_001(
     )
 
 
+def test_natureza_out_com_avaliacao_na_gera_base_cont_001() -> None:
+    """Instrucao 12/2026: OUT entra no mesmo conjunto de naturezas 'reais'
+    que TRI/TRA/CIV, entao tambem exige tipoAvaliacao I ou M."""
+    evento = _evento(
+        "EVT-1",
+        [_linha(2, naturezaContingencia="OUT", tipoAvaliacao="NA")],
+    )
+
+    assert (
+        validar_natureza_contingencia_avaliacao(evento).codigo
+        == "BASE-CONT-001"
+    )
+
+
 def test_natureza_e_avaliacao_coerentes_nao_geram_ocorrencia() -> None:
     evento = _evento(
         "EVT-1",
         [_linha(2, naturezaContingencia="TRI", tipoAvaliacao="I")],
+    )
+
+    assert validar_natureza_contingencia_avaliacao(evento) is None
+
+
+def test_natureza_out_com_avaliacao_individual_nao_gera_ocorrencia() -> None:
+    evento = _evento(
+        "EVT-1",
+        [_linha(2, naturezaContingencia="OUT", tipoAvaliacao="I")],
     )
 
     assert validar_natureza_contingencia_avaliacao(evento) is None
@@ -193,6 +216,29 @@ def test_natureza_para_risco_ausente_gera_dro001233() -> None:
 
     assert evento.valor_total_risco is not None
     assert validar_natureza_para_risco(evento).codigo == "DRO001233"
+
+
+def test_natureza_out_com_risco_nao_gera_dro001233() -> None:
+    """Instrucao 12/2026: OUT conta como natureza real (tratada igual a
+    TRI/TRA/CIV) para efeito de DRO001233 -- diferente de NA, que continua
+    contando como 'natureza nao informada'."""
+    linhas = [
+        _linha(
+            2,
+            tipoAvaliacao="I",
+            naturezaContingencia="OUT",
+            probabilidadePerda="PR",
+            valorRisco=10_000_000,
+            dataContabilizacao="2025-06-15",
+            valorPerdaEfetiva=0,
+            valorProvisao=500,
+            valorRecuperacao=0,
+        )
+    ]
+    evento = _evento("EVT-1", linhas)
+
+    assert evento.valor_total_risco is not None
+    assert validar_natureza_para_risco(evento) is None
 
 
 def test_descricao_obrigatoria_pela_materialidade_gera_dro001241() -> None:
@@ -1076,6 +1122,20 @@ def test_validar_formatos_e_dominios_evento_tipo_avaliacao_aceita_ie_me(
     evento = _evento(
         "EVT-1",
         [_linha(2, codigoEventoOrigem="COD1", tipoAvaliacao=valor)],
+    )
+
+    assert validar_formatos_e_dominios_evento(evento) == []
+
+
+@pytest.mark.parametrize("valor", ["TRI", "TRA", "CIV", "OUT", "NA"])
+def test_validar_formatos_e_dominios_evento_natureza_contingencia_aceita_out(
+    valor: str,
+) -> None:
+    """Instrucao 12/2026: naturezaContingencia tambem aceita OUT (outras
+    contingencias), alem do dominio anterior TRI|TRA|CIV|NA."""
+    evento = _evento(
+        "EVT-1",
+        [_linha(2, codigoEventoOrigem="COD1", naturezaContingencia=valor)],
     )
 
     assert validar_formatos_e_dominios_evento(evento) == []
